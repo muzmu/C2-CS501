@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Main page{% endblock %}</h1>
+  {% if g.operator %}
+    <p>You are logged in as: {{ g.operator['username'] }}</p>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if g.operator %}
+    <h2>Here are all the operators:</h2>
+    <ul>
+      {% for operator in operators %}
+        <li>
+          {{ operator['username'] }}
+          {% if g.operator['id'] == operator['id'] %}
+            {{ "<-- you!" }}
+          {% endif %}
+        </li>
+        {% if not loop.last %}
+          <hr>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}
