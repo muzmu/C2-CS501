@@ -25,11 +25,11 @@ class Implant(db.Model):
     # Source: https://docs.sqlalchemy.org/en/14/orm/loading_columns.html
 
     # Not shown for listAllImplants but shown when a specific implant is queried
-    computer_guid = deferred(db.Column(db.String(default_number)), group='specific_implant')
-    session_key = deferred(db.Column(db.String(default_number)), group='specific_implant')
-    sleep = deferred(db.Column(db.String(default_number)), group='specific_implant')
-    jitter = deferred(db.Column(db.String(default_number)), group='specific_implant')
-    first_seen = deferred(db.Column(db.String(default_number)), group='specific_implant')
+    # computer_guid = deferred(db.Column(db.String(default_number)), group='specific_implant')
+    # session_key = deferred(db.Column(db.String(default_number)), group='specific_implant')
+    # sleep = deferred(db.Column(db.String(default_number)), group='specific_implant')
+    # jitter = deferred(db.Column(db.String(default_number)), group='specific_implant')
+    # first_seen = deferred(db.Column(db.String(default_number)), group='specific_implant')
 
 class Command(db.Model):
     id = db.Column(db.Integer, primary_key=True)
