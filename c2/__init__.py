@@ -3,7 +3,7 @@ import os
 from flask import Flask
 
 from .db import db, init_app
-from . import auth, c2
+from . import auth, operator
 
 def create_app(test_config=None):
     # create and configure app
@@ -19,19 +19,19 @@ def create_app(test_config=None):
         app.config.from_pyfile('config.py', silent=True)
     else:
         app.config.from_mapping(test_config)
-    
+
     # ensure the instance folder exists
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    
+
     with app.app_context():
         init_app(app) # register cli function init-db
         db.init_app(app) # start database
 
     app.register_blueprint(auth.bp)
-    app.register_blueprint(c2.bp)
+    app.register_blueprint(operator.bp)
     app.add_url_rule('/', endpoint='index')
 
     return app
