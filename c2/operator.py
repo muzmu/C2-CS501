@@ -22,7 +22,8 @@ def index():
     return render_template('operator/index.html', operators=operators)
 
 
-# TODO: Maybe put operator_id in header instead
+# TODO: Get operator_id from the session using @login_required and g.operator to
+    # prevent logged-out people from acessing stuff
 @bp.route('/implant', methods=['GET'])
 def get_implant():
     implant_id = request.args.get("implant_id")
@@ -35,20 +36,23 @@ def get_implant():
         error = "operator_id is required."
 
     if error:
-        return Response(response=error, status=400, mimetype='application/json')
+        response = { "error": error }
+        return make_response(jsonify(response), 400)
 
     #  Check operator_id is valid
     operator = Operator.query.filter_by(id=operator_id).first()
 
     if not operator:
         error = "operator_id is not valid."
-        return Response(response=error, status=400, mimetype='application/json')
+        response = { "error": error }
+        return make_response(jsonify(response), 400)
 
     implant = Implant.query.filter_by(id=implant_id).first()
 
     if not implant:
         error = "implant_id is not valid."
-        return Response(response=error, status=400, mimetype='application/json')
+        response = { "error": error }
+        return make_response(jsonify(response), 400)
 
     response = {
         "computer_name": implant.computer_name,
@@ -69,6 +73,8 @@ def get_implant():
     return make_response(response, 200)
 
 
+# TODO: Get operator_id from the session using @login_required and g.operator to
+    # prevent logged-out people from acessing stuff
 @bp.route('/implant/all', methods=['GET'])
 def list_all_implants():
     error = None
@@ -76,13 +82,15 @@ def list_all_implants():
 
     if not operator_id:
         error = "operator_id is required."
-        return Response(response=error, status=400, mimetype='application/json')
+        response = { "error": error }
+        return make_response(jsonify(response), 400)
 
     operator = Operator.query.filter_by(id=operator_id).first()
 
     if not operator:
         error = "operator_id is not valid."
-        return Response(response=error, status=400, mimetype='application/json')
+        response = { "error": error }
+        return make_response(jsonify(response), 400)
 
     query_result = Implant.query.all()
     implants = []
@@ -103,7 +111,8 @@ def list_all_implants():
     return make_response(response, 200)
 
 
-# Set request content type to application/json
+# TODO: Get operator_id from the session using @login_required and g.operator to
+    # prevent logged-out people from acessing stuff
 @bp.route('/storeCommandForImplant', methods=['POST'])
 def store_command_for_implant():
 
@@ -123,25 +132,28 @@ def store_command_for_implant():
     elif not operator_id:
         error = 'operator_id is required.';
 
+    if error:
+        response = { "error": error }
+        return make_response(jsonify(response), 400)
+
     operator = Operator.query.filter_by(id=operator_id).first()
 
     if not operator:
         error = "operator_id is not valid."
-        return Response(response=error, status=400, mimetype='application/json')
+        response = { "error": error }
+        return make_response(jsonify(response), 400)
 
     implant = Implant.query.filter_by(id=implant_id).first()
 
     if not implant:
         error = "implant_id is not valid."
-        return Response(response=error, status=400, mimetype='application/json')
+        response = { "error": error }
+        return make_response(jsonify(response), 400)
 
     # TODO: Get length of timestamp, update database
     time_issued = datetime.now()
     status = "not_taken_by_implant"
     command_result = None
-
-    if error:
-        return Response(response=error, status=400, mimetype='application/json')
 
     command = Command(
         command_type = command_type,
@@ -156,7 +168,8 @@ def store_command_for_implant():
     db.session.add(command)
     db.session.commit()
 
-    return Response(response='Command stored.', status=200, mimetype='application/json')
+    response = { "msg": "Command stored" }
+    return make_response(jsonify(response), 200)
 
 
 # For testing only, delete later
@@ -188,7 +201,8 @@ def make_test_implant():
         id = implant.id
     except Exception as e:
         print(f"Error in make_fake_implant: {e}")
-        return make_response(e, 500)
+        response = { "error": e }
+        return make_response(jsonify(response), 500)
 
     response = {
         "id": id
@@ -219,7 +233,8 @@ def make_test_operator():
         id = operator.id
     except Exception as e:
         print(f"Error in make_fake_operator: {e}")
-        return make_response(e, 500)
+        response = { "error": e }
+        return make_response(jsonify(response), 500)
 
     response = {
         "id": id
