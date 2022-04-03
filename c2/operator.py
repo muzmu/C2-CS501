@@ -219,5 +219,12 @@ def make_test_operator():
         id = operator.id
     except Exception as e:
         print(f"Error in make_fake_operator: {e}")
+        return make_response(e, 500)
 
-    return id
+    response = {
+        "id": id
+    }
+
+    response = jsonify(response)
+
+    return make_response(response, 200)

