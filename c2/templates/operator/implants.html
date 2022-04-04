@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}All Implants{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<ul class="list-group">
+    {% for implant in implants %}
+    <li class="list-group-item">
+        <a href="{{ url_for('operator.get_implant', id=implant['id']) }}">
+            <p>id: {{ implant['id'] }}</p>
+            <p>name: {{ implant['computer_name'] }}</p>
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
