@@ -55,44 +55,34 @@ def list_all_implants():
     return render_template('operator/implants.html', implants=implants)
 
 
-# TODO: Get operator_id from the session using @login_required and g.operator to
-# prevent logged-out people from acessing stuff
-@bp.route('/storeCommandForImplant', methods=['POST'])
-def store_command_for_implant():
+@bp.route('/implant/<id>/sendCommand', methods=['POST'])
+@login_required
+def store_command_for_implant(id):
 
-    data = request.json
-    command_type = data['command_type']
-    command_text = data['command_text']
-    implant_id = data['implant_id']
-    operator_id = data['operator_id']
-    error = None
-
-    if not command_type:
-        error = 'command_type is required.'
-    elif not command_text:
-        error = 'command_text is required.'
-    elif not implant_id:
-        error = 'implant_id is required.'
-    elif not operator_id:
-        error = 'operator_id is required.'
-
-    if error:
-        response = {"error": error}
-        return make_response(jsonify(response), 400)
-
-    operator = Operator.query.filter_by(id=operator_id).first()
-
-    if not operator:
-        error = "operator_id is not valid."
-        response = {"error": error}
-        return make_response(jsonify(response), 400)
-
-    implant = Implant.query.filter_by(id=implant_id).first()
+    operator = g.operator
+    implant = Implant.query.filter_by(id=id).first()
 
     if not implant:
-        error = "implant_id is not valid."
-        response = {"error": error}
-        return make_response(jsonify(response), 400)
+        error = "No implant of that id."
+        flash(error)
+        return redirect(url_for('operator.list_all_implants'))
+
+    command_type = request.form['command_type']
+    command_text = request.form['command_text']
+    implant_id = implant.id
+    operator_id = operator.id
+
+    errors = []
+
+    if not command_type:
+        errors.append('Command type is required.')
+    if not command_text:
+        errors.append('Command text is required.')
+
+    if errors:
+        for error in errors:
+            flash(error)
+        return redirect(url_for('operator.get_implant', id=implant_id))
 
     # TODO: Get length of timestamp, update database
     time_issued = datetime.now()
@@ -112,8 +102,9 @@ def store_command_for_implant():
     db.session.add(command)
     db.session.commit()
 
-    response = {"msg": "Command stored"}
-    return make_response(jsonify(response), 200)
+    response = "Command stored."
+    flash(response)
+    return redirect(url_for('operator.get_implant', id=implant_id))
 
 
 # For testing only, delete later
