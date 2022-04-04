@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}Implant {{ implant['id'] }}{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<div>
+  Here is information for implant id {{ implant['id'] }}
+  <ul>
+    <li>Computer name: {{ implant['computer_name'] }}</li>
+    <li>Last seen: {{ implant['last_seen'] }}</li>
+    <li>Computer user: {{ implant['computer_user'] }}</li>
+    <li>Computer privileges: {{ implant['computer_privileges'] }}</li>
+    <li>Connecting ip address: {{ implant['connecting_ip_address'] }}</li>
+  </ul>
+  TODO: add actions here.
+</div>
+{% endblock %}
