@@ -14,6 +14,26 @@
     <li>Computer privileges: {{ implant['computer_privileges'] }}</li>
     <li>Connecting ip address: {{ implant['connecting_ip_address'] }}</li>
   </ul>
-  TODO: add actions here.
+
+  <hr />
+
+  <h2>Send command to implant</h2>
+  <form method="post" action="{{ url_for('operator.store_command_for_implant', id=implant['id']) }}" class="g-3">
+    <div class="mb-3 col-4">
+      <label for="command_type" class="form-label">Command type</label>
+      <input name="command_type" id="command_type" class="form-control" required>
+    </div>
+    <div class="mb-3 col-4">
+      <label for="command_text" class="form-label">Command text</label>
+      <textarea name="command_text" id="command_text" class="form-control" required></textarea>
+    </div>
+    <div class="mb-3">
+      <button type="submit" class="btn btn-primary">Send Command</button>
+    </div>
+  </form>
+
+  <hr />
+
+  <p>TODO: list existing commands</p>
 </div>
 {% endblock %}
