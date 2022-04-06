@@ -6,6 +6,7 @@ from werkzeug.exceptions import abort
 
 from datetime import datetime
 import json
+import random
 
 from .auth import login_required
 from .db import db
@@ -30,16 +31,16 @@ def index():
 def get_implant(id):
 
     if not id:
-        error = "implant id is required."
-        response = {"error": error}
-        return make_response(jsonify(response), 400)
+        error = "Implant id is required."
+        flash(error)
+        return redirect(url_for('operator.list_all_implants'))
 
     implant = Implant.query.filter_by(id=id).first()
 
     if not implant:
-        error = "no implant with that id."
-        response = {"error": error}
-        return make_response(jsonify(response), 400)
+        error = f"No implant with id {id}."
+        flash(error)
+        return redirect(url_for('operator.list_all_implants'))
 
     return render_template('operator/implant.html', implant=implant)
 
@@ -155,7 +156,7 @@ def make_test_operator():
 
     try:
         operator = Operator(
-            username="test_username",
+            username=f"test_username_{random.randint(1,1000)}",
             password_hash="test_password_hash"
         )
 
@@ -168,7 +169,7 @@ def make_test_operator():
         id = operator.id
     except Exception as e:
         print(f"Error in make_fake_operator: {e}")
-        response = {"error": e}
+        response = {"error": str(e)}
         return make_response(jsonify(response), 500)
 
     response = {
