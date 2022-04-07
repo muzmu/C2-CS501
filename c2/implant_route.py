@@ -65,6 +65,7 @@ def register():
                         db.session.add(implant)
                         db.session.commit()
                         print("Implant added")
+                        return jsonify({"status":"good job"})
                 except:
                     pass
             else:
