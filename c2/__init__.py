@@ -3,7 +3,8 @@ import os
 from flask import Flask
 
 from .db import db, init_app
-from . import auth, operator
+from . import auth, operator, implant_route
+
 
 def create_app(test_config=None):
     # create and configure app
@@ -27,11 +28,12 @@ def create_app(test_config=None):
         pass
 
     with app.app_context():
-        init_app(app) # register cli function init-db
-        db.init_app(app) # start database
+        init_app(app)  # register cli function init-db
+        db.init_app(app)  # start database
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(operator.bp)
+    app.register_blueprint(implant_route.bp)
     app.add_url_rule('/', endpoint='index')
 
     return app
