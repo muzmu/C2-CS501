@@ -57,6 +57,7 @@ class Command(db.Model):
 class Alert(db.Model):
     __tablename__ = 'alert'
 
+    default_number = 120
     id = Column(Integer, primary_key=True)
     alert = Column(String(default_number), unique=False)
     implant_id = Column(Integer, ForeignKey('implant.id'))
