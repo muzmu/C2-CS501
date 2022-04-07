@@ -52,8 +52,13 @@ class Command(db.Model):
     time_issued = Column(String(default_number), unique=False)
     status = Column(String(default_number), unique=False)
     command_result = Column(String(12000), unique=False)
+    command_id = Column(Integer,unique = False)
 
 class Alert(db.Model):
     __tablename__ = 'alert'
 
     id = Column(Integer, primary_key=True)
+    alert = Column(String(default_number), unique=False)
+    implant_id = Column(Integer, ForeignKey('implant.id'))
+    time_reported = Column(String(default_number), unique=False)
+    
