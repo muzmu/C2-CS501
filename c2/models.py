@@ -1,5 +1,8 @@
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import deferred
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+
 
 from .db import db
 
@@ -52,7 +55,7 @@ class Command(db.Model):
     time_issued = Column(String(default_number), unique=False)
     status = Column(String(default_number), unique=False)
     command_result = Column(String(12000), unique=False)
-    command_id = Column(Integer,unique = False)
+    command_id = Column(String(default_number),unique = True,default=lambda : str(uuid.uuid4()))
 
 class Alert(db.Model):
     __tablename__ = 'alert'
