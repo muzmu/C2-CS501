@@ -70,7 +70,7 @@ def store_command_for_implant(id):
 
     command_type = request.form['command_type']
     command_text = request.form['command_text']
-    implant_id = implant.id
+    computer_guid = implant.id
     operator_id = operator.id
 
     errors = []
@@ -83,7 +83,7 @@ def store_command_for_implant(id):
     if errors:
         for error in errors:
             flash(error)
-        return redirect(url_for('operator.get_implant', id=implant_id))
+        return redirect(url_for('operator.get_implant', id=computer_guid))
 
     # TODO: Get length of timestamp, update database
     time_issued = datetime.now()
@@ -93,7 +93,7 @@ def store_command_for_implant(id):
     command = Command(
         command_type=command_type,
         command_text=command_text,
-        implant_id=implant_id,
+        computer_guid=computer_guid,
         operator_id=operator_id,
         time_issued=time_issued,
         status=status,
@@ -105,7 +105,7 @@ def store_command_for_implant(id):
 
     response = "Command stored."
     flash(response)
-    return redirect(url_for('operator.get_implant', id=implant_id))
+    return redirect(url_for('operator.get_implant', id=computer_guid))
 
 
 # For testing only, delete later
