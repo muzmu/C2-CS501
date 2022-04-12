@@ -29,8 +29,8 @@ class Implant():
         data = {
             "computer_name": "dummyimplantcomputer",
             "computer_user": "some_user",  # (what user the implant is running as)
-            "computer_guid": "dummy_GUID",
-            "computer_privileges": ["string1", "string2"],  # (that the implant has) - array of strings
+            "computer_guid": self._gen_id(),
+            "computer_privileges": 1,  # (that the implant has) - array of strings
             "connecting_ip_address": "10.10.10.10",  # (from the victim computer)
             # "session_key": "dummy_session_key",  # (for crypto, eventually)
         }
