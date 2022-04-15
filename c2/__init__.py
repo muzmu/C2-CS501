@@ -3,7 +3,7 @@ import os
 from flask import Flask
 
 from .db import db, init_app
-from . import auth, operator
+from . import auth, operator, download
 
 def create_app(test_config=None):
     # create and configure app
@@ -12,6 +12,7 @@ def create_app(test_config=None):
         SECRET_KEY='dev',
         SQLALCHEMY_DATABASE_URI='sqlite:///test.db',
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        DOWNLOAD_FOLDER="static/test_files"
     )
 
     # additional config
@@ -32,6 +33,7 @@ def create_app(test_config=None):
 
     app.register_blueprint(auth.bp)
     app.register_blueprint(operator.bp)
+    app.register_blueprint(download.bp)
     app.add_url_rule('/', endpoint='index')
 
     return app
