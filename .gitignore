@@ -130,3 +130,6 @@ dmypy.json
 
 # sqlite3 databases
 *.db
+
+# executables
+*.exe
