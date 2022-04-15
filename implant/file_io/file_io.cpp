@@ -9,9 +9,6 @@
 using namespace std;
 namespace fs = std::filesystem;
 
-// For testing only
-void ErrorExit(LPTSTR lpszFunction);
-
 bool checkForDirectoryTraversal(char* fileName);
 
 FileIO::FileIO() {
@@ -98,28 +95,6 @@ void FileIO::ReadFileContent(char* fileName) {
 }
 
 void FileIO::DownloadFileViaUrl(char* url, char* filePath) {
-	// DWORD maxBufferLength = 261;
-	// char *tempDirectory = new char[maxBufferLength];
-	//
-	// DWORD getTempPathSuccess = GetTempPathA(
-	// 	maxBufferLength,
-	// 	(LPSTR) tempDirectory
-	// );
-	//
-	// cout << "tempDirectory: " << tempDirectory << endl;
-	//
-	// fs::path directory (tempDirectory);
-	// fs::path file (fileName);
-	// fs::path filePath = directory / file;
-	//
-	// delete [] tempDirectory;
-	//
-	// Convert filePath to char array
-	// string filePathStr = filePath.generic_string();
-	// char filePathChar[filePathStr.length() + 1];
-	// strcpy(filePathChar, filePathStr.c_str());
-	//
-	// cout << "filePath: " << filePath << endl;
 
 	HRESULT hResult = URLDownloadToFile(
 		NULL,
