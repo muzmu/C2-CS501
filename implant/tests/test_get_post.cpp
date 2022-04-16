@@ -2,9 +2,9 @@
 #include <string>
 #include <windows.h>
 #include <winhttp.h>
-#include "../comms.hpp"
-#include "../execution.hpp"
-#include "../config.hpp"
+#include "../comms/comms.hpp"
+#include "../execution/execution.hpp"
+#include "../config/config.hpp"
 
 
 int main(int argc, char *argv[]) {
