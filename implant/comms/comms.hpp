@@ -3,7 +3,7 @@
 
 #include <string>
 #include <windows.h>
-#include "config.hpp"
+#include "../config/config.hpp"
 
 std::string get(std::string fqdn, int port, std::string uri);
 
