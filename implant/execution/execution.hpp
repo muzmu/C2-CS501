@@ -7,6 +7,8 @@
 #include <winhttp.h>
 
 
-std::string runShellCommand(std::string command);
+std::string runPowershellCommand(std::string command);
+
+std::string runProgram(LPSTR program);
 
 #endif
