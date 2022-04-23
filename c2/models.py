@@ -1,5 +1,8 @@
 from sqlalchemy import Table, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import deferred
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+
 
 from .db import db
 
@@ -33,11 +36,11 @@ class Implant(db.Model):
     # Source: https://docs.sqlalchemy.org/en/14/orm/loading_columns.html
 
     # Not shown for listAllImplants but shown when a specific implant is queried
-    computer_guid = deferred(Column(String(default_number), unique=False), group='specific_implant')
-    session_key = deferred(Column(String(default_number), unique=False), group='specific_implant')
-    sleep = deferred(Column(String(default_number), unique=False), group='specific_implant')
-    jitter = deferred(Column(String(default_number), unique=False), group='specific_implant')
-    first_seen = deferred(Column(String(default_number), unique=False), group='specific_implant')
+    computer_guid = Column(String(default_number), unique=True)
+    session_key = Column(String(default_number), unique=False)
+    sleep = Column(String(default_number), unique=False)
+    jitter = Column(String(default_number), unique=False)
+    first_seen = Column(String(default_number), unique=False)
 
 class Command(db.Model):
     __tablename__ = 'command'
@@ -47,13 +50,19 @@ class Command(db.Model):
     id = Column(Integer, primary_key=True)
     command_type = Column(String(default_number), unique=False)
     command_text = Column(String(default_number), unique=False)
-    implant_id = Column(Integer, ForeignKey('implant.id'))
+    computer_guid = Column(Integer, ForeignKey('implant.id'))
     operator_id = Column(Integer, ForeignKey('operator.id'))
     time_issued = Column(String(default_number), unique=False)
     status = Column(String(default_number), unique=False)
     command_result = Column(String(12000), unique=False)
+    command_id = Column(String(default_number),unique = True,default=lambda : str(uuid.uuid4()))
 
 class Alert(db.Model):
     __tablename__ = 'alert'
 
+    default_number = 120
     id = Column(Integer, primary_key=True)
+    alert = Column(String(default_number), unique=False)
+    computer_guid = Column(Integer, ForeignKey('implant.id'))
+    time_reported = Column(String(default_number), unique=False)
+    

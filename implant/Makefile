@@ -1,7 +1,5 @@
-# Remove -g when creating actual C2
-CC=gcc -std=c++17 -g
-CXX=g++ -std=c++17 -g
-
+CC=gcc
+CXX=g++ --std=c++17
 
 ifeq ($(OS),Windows_NT)
 	RM=powershell /c rm
@@ -9,10 +7,25 @@ else
 	RM=rm
 endif
 
-all: fileio
+headers = comms/comms.hpp config/config.hpp execution/execution.hpp file_io/file_io.h
 
-file_io:
-	$(CXX) file_io/file_io.cpp  file_io/test_file_io.cpp -o bin/file_io.exe -lshlwapi -lurlmon
+.PHONY: all clean tests
 
-clean:
-	$(RM)  bin/*.exe
+all : bin/implant.exe
+
+bin/implant.exe : implant.cpp comms/comms.cpp execution/execution.cpp $(headers)
+	$(CXX) implant.cpp comms/comms.cpp execution/execution.cpp -lwinhttp -o bin/implant.exe
+
+tests : bin/test_get_post.exe bin/test_getcommand.exe bin/test_file_io.exe
+
+bin/test_get_post.exe : tests/test_get_post.cpp comms/comms.cpp execution/execution.cpp $(headers)
+	$(CXX) tests/test_get_post.cpp comms/comms.cpp execution/execution.cpp -lwinhttp -o bin/test_get_post.exe
+
+bin/test_getcommand.exe : tests/test_getcommand.cpp comms/comms.cpp execution/execution.cpp $(headers)
+	$(CXX) tests/test_getcommand.cpp comms/comms.cpp execution/execution.cpp -lwinhttp -o bin/test_getcommand.exe
+
+bin/test_file_io.exe: tests/test_file_io.cpp file_io/file_io.cpp execution/execution.cpp $(headers)
+	$(CXX) tests/test_file_io.cpp file_io/file_io.cpp execution/execution.cpp -lwinhttp -o bin/test_file_io.exe -lshlwapi -lurlmon
+
+clean :
+	$(RM) bin/*.exe
