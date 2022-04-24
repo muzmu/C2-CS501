@@ -133,3 +133,5 @@ dmypy.json
 
 # executables
 *.exe
+
+implant/bin/*.exe
