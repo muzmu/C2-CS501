@@ -14,6 +14,7 @@ flask init-db
 
 **To start:**
 ```bash
+source venv/bin/activate
 source setup.sh
 flask run
 ```
