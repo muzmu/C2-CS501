@@ -74,6 +74,7 @@ def store_command_for_implant(id):
     command_text = request.form['command_text']
     computer_guid = implant.computer_guid
     operator_id = operator.id
+    
 
     errors = []
 

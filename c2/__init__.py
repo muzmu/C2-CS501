@@ -37,6 +37,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth.bp)
     app.register_blueprint(operator.bp)
     app.register_blueprint(implant_route.bp)
+
     app.register_blueprint(download.bp)
     app.add_url_rule('/', endpoint='index')
 

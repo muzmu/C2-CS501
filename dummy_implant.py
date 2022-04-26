@@ -15,7 +15,7 @@ class Implant():
         self.debug = debug
 
     def _gen_id(self):
-        mac_addr = f"00:00:00:00:00:{random.randint(0,255):02X}"
+        mac_addr = "00:00:00:00:00:03"
         return hashlib.sha256(mac_addr.encode('utf-8')).hexdigest()
 
     def _print_debug_request(self, r):
