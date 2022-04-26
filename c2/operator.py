@@ -14,6 +14,7 @@ from .models import Command, Implant, Operator
 
 # TODO: Delete later, for testing only
 from pprint import pprint
+import uuid
 
 
 bp = Blueprint('operator', __name__)
@@ -36,13 +37,14 @@ def get_implant(id):
         return redirect(url_for('operator.list_all_implants'))
 
     implant = Implant.query.filter_by(id=id).first()
+    commands = Command.query.filter_by(computer_guid=implant.computer_guid)
 
     if not implant:
         error = f"No implant with id {id}."
         flash(error)
         return redirect(url_for('operator.list_all_implants'))
 
-    return render_template('operator/implant.html', implant=implant)
+    return render_template('operator/implant.html', implant=implant, commands=commands)
 
 
 @bp.route('/implants', methods=['GET'])
@@ -122,7 +124,7 @@ def make_test_implant():
             connecting_ip_address="test_connecting_ip_address",
             last_seen="test_last_seen",
             expected_check_in="test_expected_check_in",
-            computer_guid="test_computer_guid",
+            computer_guid=str(uuid.uuid4()),
             session_key="test_session_key",
             sleep="test_sleep",
             jitter="test_jitter",
@@ -138,7 +140,7 @@ def make_test_implant():
         id = implant.id
     except Exception as e:
         print(f"Error in make_fake_implant: {e}")
-        response = {"error": e}
+        response = {"error": str(e)}
         return make_response(jsonify(response), 500)
 
     response = {

@@ -9,6 +9,7 @@
   Here is information for implant id {{ implant['id'] }}
   <ul>
     <li>Computer name: {{ implant['computer_name'] }}</li>
+    <li>Computer guid: {{ implant['computer_guid'] }}</li>
     <li>Last seen: {{ implant['last_seen'] }}</li>
     <li>Computer user: {{ implant['computer_user'] }}</li>
     <li>Computer privileges: {{ implant['computer_privileges'] }}</li>
@@ -34,6 +35,28 @@
 
   <hr />
 
-  <p>TODO: list existing commands</p>
+  <h2>Existing Commands</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Command type</th>
+        <th scope="col">Command text</th>
+        <th scope="col">Time issued</th>
+        <th scope="col">Status</th>
+        <th scope="col">Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for command in commands %}
+      <tr>
+        <td>{{ command['command_type'] }}</td>
+        <td>{{ command['command_text'] }}</td>
+        <td>{{ command['time_issued'] }}</td>
+        <td>{{ command['status'] }}</td>
+        <td>{{ command['command_result'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}

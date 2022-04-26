@@ -1,6 +1,7 @@
 # C2-CS501
-CnC for the project
+CnC and implant for the project
 
+## CnC
 
 **To initialize:**
 ```bash
@@ -13,6 +14,15 @@ flask init-db
 
 **To start:**
 ```bash
+source venv/bin/activate
 source setup.sh
 flask run
+```
+
+## Implant
+
+**To build:**
+```bash
+cd implant
+make
 ```
