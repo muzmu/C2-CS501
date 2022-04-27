@@ -1,3 +1,6 @@
+#ifndef AESGCM_HPP
+#define AESGCM_HPP
+
 #include <windows.h>
 #include <bcrypt.h>
 #include <stdio.h>
@@ -32,3 +35,5 @@ class AESGCM{
 
 
 };
+
+#endif

@@ -28,10 +28,16 @@ std::string getInfo() {
   std::string result;
 
   // i think this covers most of it?
-  j["whoami"] = runProgram("whoami");
+  std::string wmi = "whoami";
+  LPSTR whoami =  const_cast<char *>(wmi.c_str());
+  j["whoami"] = runProgram(whoami);
+  std::string envir = "reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\"";
+  LPSTR env =  const_cast<char *>(envir.c_str());
   //j["ps"] = runProgram("ps");
-  j["env"] = runProgram("reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\"");
-  j["systeminfo"] = runProgram("systeminfo");
+  j["env"] = runProgram(env);
+  std::string sys_info = "systeminfo /fo CSV | ConvertFrom-Csv | convertto-json";
+  LPSTR sys =  const_cast<char *>(sys_info.c_str());
+  j["systeminfo"] = runPowershellCommand(sys);
 
   result = j.dump(4);
 
