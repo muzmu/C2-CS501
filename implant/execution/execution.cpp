@@ -7,19 +7,20 @@
 
 #define BUF_SIZE 4096
 
-std::string runPowershellCommand(std::string command) {
+std::string runPowershellCommand(LPSTR command) {
     // run a command in powershell
+
 
     std::string result;
 
-    int cmdLen = 12 + command.length() + 1;
+    int cmdLen = 20 + strlen(command) + 1;
     LPSTR lpCommandLine = (LPSTR)malloc(cmdLen);
     if (!lpCommandLine) {
         printf("error making command line string");
         return "";
     }
-    sprintf(lpCommandLine, "cmd.exe /C \"%s\"", command);
-
+    sprintf(lpCommandLine, "powershell.exe /C \"%s\"", command);
+    printf("%s",lpCommandLine);
     result = runProgram(lpCommandLine);
     return result;
 }
