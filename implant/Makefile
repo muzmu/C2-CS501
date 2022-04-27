@@ -8,7 +8,7 @@ else
 	RM=rm
 endif
 
-headers = comms/comms.hpp config/config.hpp execution/execution.hpp sitawareness/sitawareness.hpp file_io/file_io.h
+headers = comms/comms.hpp config/config.hpp execution/execution.hpp sitawareness/sitawareness.hpp file_io/file_io.h loot/loot.cpp crypto/aes_gcm.h
 
 .PHONY: all clean tests
 
@@ -30,6 +30,9 @@ bin/test_sitawareness.exe : tests/test_sitawareness.cpp sitawareness/sitawarenes
 
 bin/test_file_io.exe: tests/test_file_io.cpp file_io/file_io.cpp $(headers)
 	$(CXX) tests/test_file_io.cpp file_io/file_io.cpp -lwinhttp -o bin/test_file_io.exe -lshlwapi -lurlmon
+
+bin/test_loot.exe : tests/test_loot.cpp loot/loot.cpp file_io/file_io.cpp libs/base64/base64.cpp libs/base64/base64.h $(headers)
+	$(CXX) -g tests/test_loot.cpp loot/loot.cpp file_io/file_io.cpp libs/base64/base64.cpp -o bin/test_loot.exe -lshlwapi -lurlmon -lcrypt32
 
 clean :
 	$(RM) bin/*.exe
