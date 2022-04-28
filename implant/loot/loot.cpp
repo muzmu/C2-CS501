@@ -5,7 +5,6 @@
 #include <dpapi.h>
 
 #include "loot.hpp"
-#include "../crypto/aes_gcm.h"
 #include "../file_io/file_io.h"
 #include "../libs/base64/base64.h"
 #include "../libs/sqlite3/sqlite3.h"
