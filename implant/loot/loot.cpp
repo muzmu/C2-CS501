@@ -225,7 +225,7 @@ void decryptPassword(const unsigned char* masterKey,
 		abort();
 	}
 
-	decrypted[decryptedLen - 1] = '\0';
+	decrypted[decryptedLen] = '\0';
 }
 
 void initializeSodiumLibrary() {
