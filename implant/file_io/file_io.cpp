@@ -89,7 +89,7 @@ void FileIO::ReadFileContent(char* fileName) {
   printf("bytes read %d\n", bytesRead);
 
   fileContentBuf[dwFileSize] = '\0';
-  printf("%s\n", fileContentBuf);
+  // printf("%s\n", fileContentBuf);
 
 	return;
 }
