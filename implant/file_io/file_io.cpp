@@ -21,12 +21,12 @@ FileIO::~FileIO() {
 
 void FileIO::ReadFileContent(char* fileName) {
 	// Make sure file name doesn't do directory traversal
-	if (checkForDirectoryTraversal(fileName)) {
-		cout << "Filename contains unpermitted directory traversal." << endl;
-		return;
-	} else {
-		cout << "No directory traversal found." << endl;
-	}
+	// if (checkForDirectoryTraversal(fileName)) {
+	// 	cout << "Filename contains unpermitted directory traversal." << endl;
+	// 	return;
+	// } else {
+	// 	cout << "No directory traversal found." << endl;
+	// }
 
 	// Get file size, allocate space to fileContentBuf
 
