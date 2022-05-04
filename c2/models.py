@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, String, ForeignKey
+from sqlalchemy import BINARY, Table, Column, Integer, String, ForeignKey
 from sqlalchemy.orm import deferred
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -37,7 +37,7 @@ class Implant(db.Model):
 
     # Not shown for listAllImplants but shown when a specific implant is queried
     computer_guid = Column(String(default_number), unique=True)
-    session_key = Column(String(default_number), unique=False)
+    session_key = Column(BINARY, unique=False)
     sleep = Column(String(default_number), unique=False)
     jitter = Column(String(default_number), unique=False)
     first_seen = Column(String(default_number), unique=False)

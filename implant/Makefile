@@ -8,7 +8,7 @@ else
 	RM=rm
 endif
 
-headers = comms/comms.hpp config/config.hpp execution/execution.hpp sitawareness/sitawareness.hpp file_io/file_io.h crypto/aesgcm.hpp loot/loot.hpp
+headers = comms/comms.hpp config/config.hpp execution/execution.hpp sitawareness/sitawareness.hpp file_io/file_io.h crypto/aesgcm.hpp loot/loot.hpp com_crypto/com_crypto.hpp
 
 .PHONY: all clean tests
 
@@ -34,8 +34,8 @@ bin/test_file_io.exe: tests/test_file_io.cpp file_io/file_io.cpp $(headers)
 bin/test_loot.exe : tests/test_loot.cpp loot/loot.cpp file_io/file_io.cpp libs/base64/base64.cpp libs/base64/base64.h $(headers)
 	$(CXX) -g tests/test_loot.cpp loot/loot.cpp file_io/file_io.cpp libs/base64/base64.cpp -o bin/test_loot.exe -lshlwapi -lurlmon -lcrypt32
 
-main_implant : main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp $(headers)
-	$(CXX) main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp libs/base64/base64.cpp -lwinhttp -lcrypt32 -lbcrypt -lshlwapi -lurlmon -o bin/main_implant.exe
+main_implant : main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp com_crypto/com_crypto.cpp $(headers)
+	$(CXX) -Lcom_crypto\libsodium-win64\lib\ -o bin/main_implant.exe main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp  libs/base64/base64.cpp com_crypto/com_crypto.cpp -llibsodium  -lwinhttp -lcrypt32 -lbcrypt -lshlwapi  -lurlmon 
 
 clean :
 	$(RM) bin/*.exe
