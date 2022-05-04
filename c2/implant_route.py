@@ -1,7 +1,7 @@
 import functools
 import json
 from datetime import datetime
-from msilib.schema import Error
+# from msilib.schema import Error
 
 
 from flask import (
@@ -22,7 +22,7 @@ bp = Blueprint('implant', __name__)
 def register():
     try:
         if request.method == 'POST':
-            
+
             imp_id = request.json['computer_guid']
             now = datetime.now()
             current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
@@ -43,8 +43,8 @@ def register():
             if error is None:
                 try:
                     implant = Implant.query.filter_by(computer_guid=computer_guid).first()
-                    
-                    
+
+
                     if implant:
                         implant.computer_name = cmp_name
                         implant.computer_user = user_name
@@ -103,7 +103,7 @@ def get_next_command():
                     computer_guid=impl_id, status="not_taken_by_implant").first()
                 print(next_command)
                 if next_command:
-                    
+
                     command = next_command.command_text
                     now = datetime.now()
                     current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
