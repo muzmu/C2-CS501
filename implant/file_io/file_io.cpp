@@ -12,11 +12,12 @@ namespace fs = std::filesystem;
 bool checkForDirectoryTraversal(char* fileName);
 
 FileIO::FileIO() {
-	cout << "Created FileIO obj." << endl;
+	// cout << "Created FileIO obj." << endl;
 }
 
 FileIO::~FileIO() {
-	cout << "Deleted FileIO obj." << endl;
+	CleanUp();
+	// cout << "Deleted FileIO obj." << endl;
 }
 
 void FileIO::ReadFileContent(char* fileName) {
@@ -39,7 +40,7 @@ void FileIO::ReadFileContent(char* fileName) {
   fileExists = PathFileExistsA(fileName);
 
 	if (!fileExists) {
-    cout << "File doesn't exist." << endl;
+    // cout << "File doesn't exist." << endl;
 		return;
   }
 
@@ -54,7 +55,7 @@ void FileIO::ReadFileContent(char* fileName) {
   );
 
   if (fileHandle == INVALID_HANDLE_VALUE) {
-    printf("Couldn't create file handle\n");
+    // printf("Couldn't create file handle\n");
     return;
   }
 
@@ -67,7 +68,7 @@ void FileIO::ReadFileContent(char* fileName) {
 
   // Space was not allocated successfully
   if (!fileContentBuf) {
-    printf("Couldn't allocate space for fileContentBuf");
+    // printf("Couldn't allocate space for fileContentBuf");
     return;
   }
 
@@ -80,13 +81,13 @@ void FileIO::ReadFileContent(char* fileName) {
   );
 
   if (!readFileSuccess) {
-    printf("Couldn't ReadFile\n");
+    // printf("Couldn't ReadFile\n");
     return;
   }
 
   CloseHandle(fileHandle);
 
-  printf("bytes read %d\n", bytesRead);
+  // printf("bytes read %d\n", bytesRead);
 
   fileContentBuf[dwFileSize] = '\0';
   // printf("%s\n", fileContentBuf);
@@ -104,17 +105,16 @@ void FileIO::DownloadFileViaUrl(char* url, char* filePath) {
 		NULL
 	);
 
-	if(SUCCEEDED(hResult))
-      cout << "Downloaded OK" << endl;
-  else
-      cout << "An error occured : error code = 0x" << hex << hResult << endl;
+	// if(SUCCEEDED(hResult))
+  //     cout << "Downloaded OK" << endl;
+  // else
+  //     cout << "An error occured : error code = 0x" << hex << hResult << endl;
 }
 
 void FileIO::CleanUp() {
 	// deallocate stuff
-
 	free(fileContentBuf);
-
+	// cout << "Cleaned up\n";
 	return;
 }
 
@@ -123,8 +123,8 @@ bool checkForDirectoryTraversal(char* fileName) {
 	fs::path fileAbsolutePath = fs::absolute(fileName);
 	fs::path relativePath = fs::proximate(fileAbsolutePath, currentDirectory);
 
-	cout << "Absolute file full path: " << fileAbsolutePath << endl;
-	cout << "Relative path between file and current directory: " << relativePath << endl;
+	// cout << "Absolute file full path: " << fileAbsolutePath << endl;
+	// cout << "Relative path between file and current directory: " << relativePath << endl;
 
 	// If relative path contains .., then file is out of current directory
 		// => directory traversal exists

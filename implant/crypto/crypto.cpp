@@ -34,12 +34,12 @@ void Crypto::symmEncrypt(unsigned char* ciphertext, unsigned char* nonce, unsign
 
 	/* Using random bytes for a nonce buffer (a buffer used only once) */
 	randombytes_buf_(nonce, NONCE_BYTES);
-	printf("nonce:\n");
-	dump_hex_buff(nonce, NONCE_BYTES);
+	// printf("nonce:\n");
+	// dump_hex_buff(nonce, NONCE_BYTES);
 
 	crypto_secretbox_easy_(ciphertext, plaintext, plaintextLen, nonce, key);
-	cout << "ciphertext: " << cipherLen << " \n";
-	dump_hex_buff(ciphertext, cipherLen);
+	// cout << "ciphertext: " << cipherLen << " \n";
+	// dump_hex_buff(ciphertext, cipherLen);
 }
 
 void Crypto::symmDecrypt(unsigned char* decrypted, unsigned char* nonce, unsigned char* ciphertext, int cipherLen) {
@@ -47,14 +47,20 @@ void Crypto::symmDecrypt(unsigned char* decrypted, unsigned char* nonce, unsigne
 
   bool decryptFailed = crypto_secretbox_open_easy_(decrypted, ciphertext, cipherLen, nonce, key);
 
-	if (decryptFailed) {
-		cout << "failed\n";
-	} else {
-		/* Successful decryption */
-		// printf("decrypted data (hex):\n");
-		// dump_hex_buff(decrypted, decryptedLen);
-		cout << "decrypted: " << decrypted << endl;
-	}
+	// if (decryptFailed) {
+	// 	cout << "Decrypt failed" << endl;
+  //   cout << "ciphertext: ";
+  //   dump_hex_buff(ciphertext, cipherLen);
+  //   cout << "nonce: ";
+  //   dump_hex_buff(nonce, NONCE_BYTES);
+  //   cout << endl;
+	// }
+  // else {
+	// 	/* Successful decryption */
+	// 	printf("decrypted data (hex):\n");
+	// 	dump_hex_buff(decrypted, decryptedLen);
+	// 	cout << "decrypted: " << decrypted << endl;
+	// }
 }
 
 // Utility

