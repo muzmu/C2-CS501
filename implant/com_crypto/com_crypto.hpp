@@ -18,6 +18,7 @@ class encryptor{
         std::string convert_un_char_to_str(std::vector<unsigned char> pk);
         std::string encrypt_public_key();
         std::string encrypt_data(std::string data);
+        std::string decrypt_data(std::string data);
 };
 
 #endif

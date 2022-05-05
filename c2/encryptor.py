@@ -8,7 +8,7 @@ class EncryptDecryptFile :
         self.server = server
         self.sk = PrivateKey(self.get_key(server, 'key_sk'), encoder=HexEncoder)
         self.pk = PublicKey(implant_pk)
-        print(self.pk.encode(encoder=HexEncoder))
+        print("implant pub key from database --------", self.pk.encode(encoder=HexEncoder))
 
 
     def get_key(self, name, suffix):
@@ -19,15 +19,18 @@ class EncryptDecryptFile :
         return data
 
     def encrypt(self,text):
-        box = Box(self.sk, self.pk)
+        box = SealedBox(self.pk)
         etext = box.encrypt(text)
-        return etext
+        print("Encrypted data" , etext.hex(' '))
+        return etext.hex(' ')
         
     def decrypt(self,cyphertext,nonce):
+        cyphertext = bytes.fromhex(cyphertext)
+        nonce = bytes.fromhex(nonce)
+        
         box = Box(self.sk, self.pk)
-        print("Done till heree")
         text = box.decrypt(cyphertext,nonce)
-        print(text)
+        print("Decrypted data -----" , text)
         return text
 
 class GetImpPubKey:
@@ -43,10 +46,11 @@ class GetImpPubKey:
         return data
         
     def decrypt(self,cyphertext):
-        print("Implant_key ===================" ,cyphertext)
+        cyphertext = bytes.fromhex(cyphertext)
+
         box = SealedBox(self.sk)
         text = box.decrypt(cyphertext)
-        print(text)
+        print("Decrypted imp_key ------- " , text)
         return text
 
 

@@ -94,6 +94,38 @@ std::string encryptor::encrypt_data(std::string data){
 }
 
 
+std::string encryptor::decrypt_data(std::string data){
+    std::vector<unsigned char> ciphertext;
+    std::vector<unsigned char> nonce_vec;
+
+    std::stringstream ss;
+    ss.str(data);
+    unsigned int x;
+    while (ss >> std::hex >> x)
+    {
+        ciphertext.push_back(x);
+
+    }
+   
+
+    std::cout <<  ciphertext.size() << std::endl;
+    std::vector<unsigned char> plain_text(ciphertext.size()-crypto_box_MACBYTES);
+    if (crypto_box_seal_open(plain_text.data(), ciphertext.data(),ciphertext.size(),implant_publickey,implant_secretkey) != 0) {
+        std::cout << "Error" << std::endl;
+    }
+    
+    plain_text[plain_text.size()-1] = 0;
+    std::string str(reinterpret_cast<char*>(plain_text.data()),plain_text.size());
+    std::cout <<str << std::endl;
+
+    //std::cout << ciphertext[0] << std::endl;
+
+
+
+    return str;
+}
+
+
 
 // int main(){
 //     CONFIG config;

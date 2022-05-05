@@ -146,10 +146,9 @@ std::string sendCommandResult(
     std::string commandPath = "/sendCommandResult";
     // data is expected as json
     std::string data = ("{\"computer_guid\": \""+config.computer_guid+"\", "
-                         "\"command_id\": \""+command_id+"\", "
-                         "\"result\": \""+" "+"\"}");
+                         "\"data\": \""+command_result+"\", "
+                         "\"nonce\": \""+command_id+"\"}");
     json d = json::parse(data);
-    d["result"] = command_result;
 
     std::string result;
     std::cout << data << std::endl;

