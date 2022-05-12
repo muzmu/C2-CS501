@@ -24,5 +24,6 @@ flask run
 **To build:**
 ```bash
 cd implant
-make
+make main_implant
+.\bin\main_implant.exe
 ```
