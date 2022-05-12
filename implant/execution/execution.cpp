@@ -20,7 +20,7 @@ std::string runPowershellCommand(LPSTR command) {
         return "";
     }
     sprintf(lpCommandLine, "powershell.exe /C \"%s\"", command);
-    printf("%s",lpCommandLine);
+    //printf("%s",lpCommandLine);
     result = runProgram(lpCommandLine);
     return result;
 }
