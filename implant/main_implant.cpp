@@ -24,6 +24,12 @@
 #include <thread>
 #include <unordered_map>
 
+#ifdef CHILD
+bool isChild = true;
+#else
+bool isChild = false;
+#endif
+
 using json = nlohmann::json;
 
 std::string get_mac_address() {
@@ -157,8 +163,8 @@ int main() {
     config.c2_fqdn = "localhost";
     config.c2_port = 5000;
     // bool isChild = false;
-    bool isChild = true;
-    std::string parentWsUrl = "localhost:5001";
+    // bool isChild = true;
+    std::string parentWsUrl = "ws://localhost:5001/";
     rtc::InitLogger(rtc::LogLevel::Warning);
 
     rtc::Configuration rtcconfig;
@@ -247,12 +253,22 @@ int main() {
             }
 
         });
+        std::cout << "here!" << std::endl;
+        ws->onOpen([](){
+            std::cout << "ws opened" << std::endl;
+        });
+        ws->onError([](std::string s){
+            std::cout << "websocket error " << s << std::endl;
+        });
         json childDescription = json::parse("{}");
         childDescription["mode"] = "description";
-        childDescription["data"] = *localDescription;
+        // childDescription["data"] = *localDescription;
+        std::cout << "before opening ws" << std::endl;
         ws->open(parentWsUrl);
-        std::cout << "child opened ws" << std::endl;
-        ws->send(childDescription.dump());
+        std::cout << "child called open ws" << std::endl;
+        Sleep(2000); // i know i know, just wait for the ws to open
+        // ws->send(childDescription.dump());
+        ws->send("literally anything");
         std::cout << "child sent description" << std::endl;
 
     } else { // we are the parent
@@ -297,11 +313,13 @@ int main() {
         // we also listen on a websocket for the child's signalling connection
         struct rtc::WebSocketServer::Configuration wss_config; // = rtc::Configuration 
         wss_config.port = 5001;
+        wss_config.enableTls = false;
         // auto ws = std::make_shared<rtc::WebSocket>();
         std::shared_ptr<rtc::WebSocket> ws;
         auto wss = std::make_shared<rtc::WebSocketServer>(wss_config);
         std::cout << "parent made wss" << std::endl;
         wss->onClient([&ws, pc, localDescription, localCandidate](auto ws_found){
+            std::cout << "parent got client" << std::endl;
             ws = ws_found;
             ws->onMessage([ws, pc, localDescription, localCandidate](auto data){
                 // data holds either std::string or rtc::binary
